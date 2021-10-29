@@ -1,9 +1,13 @@
 class FunctionDirectory(object):
 
     def __init__(self):
-        self.program_name = None
-        self.functions = {"program" : {}}
+        self.functions = {}
 
 
-    def declare_function(self, func_name, scope, vars, param_seq, address_s, size):
-        self.functions[func_name] = {"scope" : scope, "vars" : vars, "param_seq" : param_seq, "address_s" : address_s, "size", size}
+    def declare_function(self, id, type, scope):
+        self.functions[id] = {"scope" : scope, "type" : type, "id" : id}
+        self.functions[id]['var_table'] = [[],[]]
+
+
+    def add_var_table(self, id, var_table):
+        self.functions[id]["var_table"]

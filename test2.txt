@@ -1,0 +1,15 @@
+program chamadc;
+vars{
+int : a;
+
+}
+
+function float brinca (float c){
+    c = 34;
+
+    return (5);
+}
+
+main() {
+    hola = "mundo";
+}

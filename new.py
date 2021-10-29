@@ -4,7 +4,7 @@ import codecs
 import os
 import sys
 from QuadMotor import *
-
+from tools import *
 
 
 tokens = [
@@ -140,6 +140,10 @@ import  ply.yacc as yacc
 
 #creation of quad motor object
 qm = QuadMotor()
+FUNC_DIR = FunctionDirectory()
+last_seen_func = "base"
+last_type_seen = "base"
+
 
 
 precedence = (
@@ -160,8 +164,15 @@ def p_program(p):
     '''PROGRAM : PROGRAM_K ID neural_program_id SEMICOLON BLOCK'''
     print("correct syntax")
 
+
 def p_neural_program_id(p):
     '''neural_program_id : EMPTY'''
+    global last_seen_func
+    last_seen_func = p[-1]
+
+    FUNC_DIR.program_name = p[-1]
+    FUNC_DIR.declare_function(p[-1], "program_type", "g_scope",)
+
 
 def p_block(p):
     '''BLOCK : VAR_BLOCK PROC_BLOCK PRINCIPAL_BLOCK'''
@@ -182,11 +193,24 @@ def p_var_list(p):
 def p_var_list2(p):
     '''VAR_LIST2 : COMMA ID VAR_LIST2
                  | EMPTY'''
+    if last_seen_func != 'base':
+        FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+        FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+
+
+
 
 def p_type(p):
-    '''TYPE : INT_K
-            | FLOAT_K
-            | STRING_K'''
+    '''TYPE : INT_K NEURAL_TYPE
+            | FLOAT_K NEURAL_TYPE
+            | STRING_K NEURAL_TYPE'''
+    global last_type_seen
+    last_type_seen = p[1]
+
+
+
+def p_neural_type(p):
+    '''NEURAL_TYPE : EMPTY'''
 
 def p_proc_block(p):
     '''PROC_BLOCK : PROC_DECL'''
@@ -200,21 +224,40 @@ def p_proc_decl(p):
 def p_proc_decl_void(p):
     '''PROC_DECL_VOID : FUNCTION_K VOID_K ID neural_proc_void_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART PROC_BODY BLOCKEND PROC_DECL'''
 
+
 def p_neural_proc_void_id(p):
     '''neural_proc_void_id : EMPTY'''
+    global last_seen_func
+    global last_type_seen
+    last_seen_func = p[-1]
+    last_type_seen = p[-2]
+    FUNC_DIR.declare_function(last_seen_func, last_type_seen, "f_scope")
+
+
 
 def p_proc_decl_return(p):
     '''PROC_DECL_RETURN : FUNCTION_K TYPE ID neural_proc_return_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART PROC_BODY RETURN BLOCKEND PROC_DECL'''
 
+
 def p_neural_proc_return_id(p):
     '''neural_proc_return_id : EMPTY'''
+    global last_seen_func
+    last_seen_func = p[-1]
+    FUNC_DIR.declare_function(last_seen_func, last_type_seen, "f_scope")
+
 
 def p_neural_param_decl(p):
     '''neural_param_decl : EMPTY'''
 
 def p_param_decl(p):
-    '''PARAM_DECL : TYPE ID PARAM_DECL_R
+    '''PARAM_DECL : TYPE ID neuro PARAM_DECL_R
                   | EMPTY'''
+
+def p_neuro(p):
+    '''neuro : EMPTY'''
+    if last_seen_func != 'base':
+        FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+        FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
 
 def p_param_decl_r(p):
     '''PARAM_DECL_R : COMMA PARAM_DECL
@@ -318,10 +361,7 @@ def p_expression(p):
 #4
 def p_neural_expression(p):
     '''NEURAL_EXPRESSION : EMPTY'''
-    if qm.poper[0] in "+-":
-        right_operand = qm.operand_stack.pop()
-        left_operand = qm.operand_stack.pop()
-        operator = qm.poper.pop()
+
 
 
 def p_expression_r(p):
@@ -332,7 +372,6 @@ def p_expression_r(p):
 #3a
 def p_neural_plus(p):
     '''NEURAL_PLUS : EMPTY'''
-    qm..append(p[-1])
 
 #3b
 def p_neural_minus(p):
@@ -367,7 +406,7 @@ def p_neural_divide(p):
 
 def p_factor_(p):
     '''FACTOR : ID NEURAL_ID
-              | CONSTANT NEURAL_CNT
+              | CONSTANT
               | LPAREN EXPRESSION RPAREN'''
 
 #1
@@ -411,8 +450,6 @@ def p_empty(p):
 
 parser = yacc.yacc()
 
-
-
 input_file_path = "test.txt"
 
 s = ""
@@ -425,3 +462,6 @@ with open(input_file_path) as f:
 
 lexer.input(s)
 parser.parse(s)
+
+
+print(FUNC_DIR.functions)
