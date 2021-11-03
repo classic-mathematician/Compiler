@@ -4,7 +4,24 @@ import codecs
 import os
 import sys
 from QuadMotor import *
+from SemanticCube import *
 from tools import *
+
+#virtual memory
+
+# global variables 1000-9999
+    # 1000-2999 int
+    # 3000- 5999 float
+    # 6000 - 9999 strings
+# local variables 10,000 - 19,9999
+    # 10,000 - 12,999 int
+    # 13,000 - 15,999 float
+    # 16,000 - 19,999 string
+# temporal variables 20,000 - 29,999
+    # 20,000 - 22,999 int
+    # 23,000 - 25999 float
+    # 26,000 - 29999 stringe
+# constantes 30,000 - 34,999
 
 
 tokens = [
@@ -140,6 +157,7 @@ import  ply.yacc as yacc
 
 #creation of quad motor object
 qm = QuadMotor()
+vm = VirtualMemory()
 FUNC_DIR = FunctionDirectory()
 last_seen_func = "base"
 last_type_seen = "base"
@@ -190,12 +208,19 @@ def p_var_decl_r(p):
 def p_var_list(p):
     '''VAR_LIST : ID VAR_LIST2'''
 
+
 def p_var_list2(p):
     '''VAR_LIST2 : COMMA ID VAR_LIST2
                  | EMPTY'''
     if last_seen_func != 'base':
-        FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
-        FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+        if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+            error_msg = "Variable '{}' has already been declared in the currect scope".format(p[-1])
+            raise Exception(error_msg)
+        else:
+            FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+            FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+            FUNC_DIR.functions[last_seen_func]['paramorder'].append(last_type_seen)
+
 
 
 
@@ -256,8 +281,13 @@ def p_param_decl(p):
 def p_neuro(p):
     '''neuro : EMPTY'''
     if last_seen_func != 'base':
-        FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
-        FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+        if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+            error_msg = "Variable '{}' has already been declared in the currect scope".format(p[-1])
+            raise Exception(error_msg)
+        else:
+            FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+            FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+            FUNC_DIR.functions[last_seen_func]['paramorder'].append(last_type_seen)
 
 def p_param_decl_r(p):
     '''PARAM_DECL_R : COMMA PARAM_DECL
@@ -330,6 +360,7 @@ def p_constant(p):
     '''CONSTANT : INT
                 | FLOAT
                 | STRING'''
+    p[0] = p[1]
 
 def p_read(p):
     '''READ : READ_K ID_LIST'''
@@ -361,7 +392,23 @@ def p_expression(p):
 #4
 def p_neural_expression(p):
     '''NEURAL_EXPRESSION : EMPTY'''
+    if qm.poper:
+        if qm.poper[-1] in ['+', '-']:
+            right_operand = qm.operand_stack.pop()
+            right_type = qm.types_stack.pop()
 
+            left_operand = qm.operand_stack.pop()
+            left_type = qm.types_stack.pop()
+
+            operator = qm.poper.pop()
+            result_type = semantic_cube[left_type, operator, right_type]
+
+            if result_type != 'e':
+                pass
+
+            else:
+                error_msg = "Type mismatch '{}' '{}' '{}' isn't valid".format(left_type, operator, right_type)
+                raise Exception(error_msg)
 
 
 def p_expression_r(p):
@@ -372,6 +419,8 @@ def p_expression_r(p):
 #3a
 def p_neural_plus(p):
     '''NEURAL_PLUS : EMPTY'''
+    qm.poper.append(p[-1])
+
 
 #3b
 def p_neural_minus(p):
@@ -405,15 +454,31 @@ def p_neural_divide(p):
 
 
 def p_factor_(p):
-    '''FACTOR : ID NEURAL_ID
-              | CONSTANT
-              | LPAREN EXPRESSION RPAREN'''
+    '''FACTOR : ID NEURAL_ID_FAC
+              | CONSTANT NEURAL_CNT_FACT
+              | LPAREN H_EXPRESSION RPAREN'''
 
 #1
-def p_neural_id(p):
-    '''NEURAL_ID : EMPTY'''
-    qm.operand_stack.append(p[-1])
-    qm.types_stack.append(p[-1])
+def p_neural_id_fac(p):
+    '''NEURAL_ID_FAC : EMPTY'''
+    if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+
+        qm.operand_stack.append(p[-1])
+        index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
+        type = FUNC_DIR.functions[last_seen_func]['var_table'][1][index]
+        qm.types_stack.append(type)
+
+    else:
+        error_msg = "Variable '{}' used but hast been declared in the currect scope".format(p[-1])
+        raise Exception(error_msg)
+
+
+
+
+def p_neural_id_cnt_fact(p):
+    '''NEURAL_CNT_FACT : EMPTY'''
+
+
 
 
 def p_s_expression(p):
@@ -463,5 +528,4 @@ with open(input_file_path) as f:
 lexer.input(s)
 parser.parse(s)
 
-
-print(FUNC_DIR.functions)
+# print(FUNC_DIR.functions)

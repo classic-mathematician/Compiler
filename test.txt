@@ -5,14 +5,14 @@ float : x, y;
 
 }
 
-function float brinca (float c, int d){
-    c = 34;
+function float brinca (float a, float c, int d){
+    c = 34 * a + 2 / d;
 
     return (5);
 }
 
 
-function void brinca2 (int z, float w){
+function void brinca2 (int z, float w, float c){
     z = 33;
 }
 

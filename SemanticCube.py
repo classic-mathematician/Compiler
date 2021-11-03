@@ -3,10 +3,10 @@ semantic_cube = {}
 
 semantic_cube["int"] = {
     #operators
-    "+" :  {"int" : "int", "float" : "float", "string" : "err"},
-    "-" :  {"int" : "int", "float" : "float", "string" : "err"},
-    "*" :  {"int" : "int", "float" : "float", "string" : "err"},
-    "/" :  {"int" : "int", "float" : "float", "string" : "err"},
+    "+" :  {"int" : "int", "float" : "float", "string" : "e"},
+    "-" :  {"int" : "int", "float" : "float", "string" : "e"},
+    "*" :  {"int" : "int", "float" : "float", "string" : "e"},
+    "/" :  {"int" : "int", "float" : "float", "string" : "e"},
 
 
     #assignator
@@ -14,51 +14,51 @@ semantic_cube["int"] = {
 
 
     #comparators
-    "==" :  {"int" : "int", "float" : "e", "string" : "err"} ,
-    ">" :  {"int" : "int", "float" : "int", "string" : "err"},
-    "<" :  {"int" : "int", "float" : "int", "string" : "err"},
-    ">=" :  {"int" : "int", "float" : "int", "string" : "err"},
-    "<=" :  {"int" : "int", "float" : "int", "string" : "err"},
-    "&&" :  {"int" : "int", "float" : "int", "string" : "err"},
-    "|" :  {"int" : "int", "float" : "int", "string" : "err"},
+    "==" :  {"int" : "int", "float" : "e", "string" : "e"} ,
+    ">" :  {"int" : "int", "float" : "int", "string" : "e"},
+    "<" :  {"int" : "int", "float" : "int", "string" : "e"},
+    ">=" :  {"int" : "int", "float" : "int", "string" : "e"},
+    "<=" :  {"int" : "int", "float" : "int", "string" : "e"},
+    "&&" :  {"int" : "int", "float" : "int", "string" : "e"},
+    "|" :  {"int" : "int", "float" : "int", "string" : "e"},
 }
 
-Semantic_cube["float"] = {
+semantic_cube["float"] = {
     #operators
     #string is not supported
-    "+" : {"int" : "float", "float" : "float", "string" : "err"},
-    "-" : {"int" : "float", "float" : "float", "string" : "err"},
-    "*" : {"int" : "float", "float" : "float", "string" : "err"},
-    "/" : {"int" : "float", "float" : "float", "string" : "err"},
+    "+" : {"int" : "float", "float" : "float", "string" : "e"},
+    "-" : {"int" : "float", "float" : "float", "string" : "e"},
+    "*" : {"int" : "float", "float" : "float", "string" : "e"},
+    "/" : {"int" : "float", "float" : "float", "string" : "e"},
 
 
     #assignator
-    "=" :  {"int" : "float", "float" : "float", "string" : "err"} ,
+    "=" :  {"int" : "float", "float" : "float", "string" : "e"} ,
 
 
     #comparators
-    "==" : {"int" : "err", "float" : "int", "string" : "err"},
-    ">" : {"int" : "int", "float" : "int", "string" : "err"},
-    "<" : {"int" : "int", "float" : "int", "string" : "err"},
-    ">=" : {"int" : "int", "float" : "int", "string" : "err"},
-    "<=" : {"int" : "int", "float" : "int", "string" : "err"},
-    "&&" : {"int" : "int", "float" : "int", "string" : "err"} ,
-    "|" : {"int" : "int", "float" : "int", "string" : "err"} ,
+    "==" : {"int" : "e", "float" : "int", "string" : "e"},
+    ">" : {"int" : "int", "float" : "int", "string" : "e"},
+    "<" : {"int" : "int", "float" : "int", "string" : "e"},
+    ">=" : {"int" : "int", "float" : "int", "string" : "e"},
+    "<=" : {"int" : "int", "float" : "int", "string" : "e"},
+    "&&" : {"int" : "int", "float" : "int", "string" : "e"} ,
+    "|" : {"int" : "int", "float" : "int", "string" : "e"} ,
 }
 
 
-Semantic_cube["string"] = {
+semantic_cube["string"] = {
 
 
     #assignator
-    "=" :  {"int" : "err", "float" : "err", "string" : "string"} ,
+    "=" :  {"int" : "e", "float" : "e", "string" : "string"} ,
 
     #comparators
-    "==" : {"int" : "err", "float" : "err", "string" : "int"},
-    ">" : {"int" : "err", "float" : "err", "string" : "int"},
-    "<" : {"int" : "err", "float" : "err", "string" : "int"},
-    ">=" : {"int" : "err", "float" : "err", "string" : "int"},
-    "<=" : {"int" : "err", "float" : "err", "string" : "int"},
-    "&&": {"int" : "int", "float" : "err", "string" : "int"},
-    "|" : {"int" : "int", "float" : "err", "string" : "int"},
+    "==" : {"int" : "e", "float" : "e", "string" : "int"},
+    ">" : {"int" : "e", "float" : "e", "string" : "int"},
+    "<" : {"int" : "e", "float" : "e", "string" : "int"},
+    ">=" : {"int" : "e", "float" : "e", "string" : "int"},
+    "<=" : {"int" : "e", "float" : "e", "string" : "int"},
+    "&&": {"int" : "int", "float" : "e", "string" : "int"},
+    "|" : {"int" : "int", "float" : "e", "string" : "int"},
 }
