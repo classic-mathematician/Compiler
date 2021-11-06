@@ -1,4 +1,4 @@
 from SemanticCube import *
 
 
-print(semantic_cube['int']['+']['string'])
+print(semantic_cube['float']['/']['int'])

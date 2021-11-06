@@ -222,6 +222,16 @@ def p_var_list2(p):
             FUNC_DIR.functions[last_seen_func]['paramorder'].append(last_type_seen)
 
 
+            #virtual memory allocation
+            scope = FUNC_DIR.functions[last_seen_func]['scope']
+            virtual_address = vm.add(scope, last_type_seen)
+            FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
+
+
+
+
+
+
 
 
 
@@ -256,7 +266,7 @@ def p_neural_proc_void_id(p):
     global last_type_seen
     last_seen_func = p[-1]
     last_type_seen = p[-2]
-    FUNC_DIR.declare_function(last_seen_func, last_type_seen, "f_scope")
+    FUNC_DIR.declare_function(last_seen_func, last_type_seen, "l_scope")
 
 
 
@@ -268,7 +278,9 @@ def p_neural_proc_return_id(p):
     '''neural_proc_return_id : EMPTY'''
     global last_seen_func
     last_seen_func = p[-1]
-    FUNC_DIR.declare_function(last_seen_func, last_type_seen, "f_scope")
+    FUNC_DIR.declare_function(last_seen_func, last_type_seen, "l_scope")
+    FUNC_DIR.functions[FUNC_DIR.program_name]['var_table'][0].append(p[-1])
+    FUNC_DIR.functions[FUNC_DIR.program_name]['var_table'][1].append(last_type_seen)
 
 
 def p_neural_param_decl(p):
@@ -277,6 +289,9 @@ def p_neural_param_decl(p):
 def p_param_decl(p):
     '''PARAM_DECL : TYPE ID neuro PARAM_DECL_R
                   | EMPTY'''
+    #reset of virtual memory
+    vm.reset()
+
 
 def p_neuro(p):
     '''neuro : EMPTY'''
@@ -288,6 +303,13 @@ def p_neuro(p):
             FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
             FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
             FUNC_DIR.functions[last_seen_func]['paramorder'].append(last_type_seen)
+
+            #virtual memory allocation
+            scope = FUNC_DIR.functions[last_seen_func]['scope']
+            virtual_address = vm.add(scope, last_type_seen)
+            FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
+
+
 
 def p_param_decl_r(p):
     '''PARAM_DECL_R : COMMA PARAM_DECL
@@ -308,6 +330,10 @@ def p_statement(p):
                  | FLOW
                 '''
 
+def p_statement_r(p):
+    '''STATEMENT_R : STATEMENT STATEMENT_R
+                   | EMPTY'''
+
 def p_flow(p):
     '''FLOW : DECISION
             | LOOP'''
@@ -323,23 +349,77 @@ def p_for_loop(p):
     '''FOR_LOOP : FOR_K ID EQUALS INT TO_K INT DO_K BLOCKSTART STATEMENT_R BLOCKEND'''
 
 def p_decision(p):
-    '''DECISION : IF_K LPAREN H_EXPRESSION RPAREN BLOCKSTART STATEMENT_R BLOCKEND DECISION_ALT'''
+    '''DECISION : IF_K LPAREN H_EXPRESSION RPAREN EXP_RESULT_NEURAL BLOCKSTART STATEMENT_R BLOCKEND DECISION_ALT DECISION_END_NEURAL'''
+
+def p_exp_result_neural(p):
+    '''EXP_RESULT_NEURAL : EMPTY'''
+    exp_type = qm.types_stack.pop()
+    if (exp_type == 'int'):
+        result = qm.operand_stack.pop()
+        qm.generate_quad('GOTOF', result, '_', '_')
+        qm.jumps_stack.append(qm.quad_counter - 1)
+
+    else:
+        error_msg = "Type mismatch '{}' type isnt valid for a conditional statement".format(exp_type)
+        raise Exception(error_msg)
+
+def p_decision_end_neural(p):
+    '''DECISION_END_NEURAL : EMPTY'''
+    dest = qm.jumps_stack.pop()
+    qm.QUADS[dest-1][3] = qm.quad_counter
 
 def p_decision_alt(p):
-    '''DECISION_ALT : ELSE_K DECISION
-                    | BLOCKSTART STATEMENT_R BLOCKEND
+    '''DECISION_ALT : ELSE
                     | EMPTY'''
 
-def p_statement_r(p):
-    '''STATEMENT_R : STATEMENT STATEMENT_R
-                   | EMPTY'''
+def p_else(p):
+    '''ELSE : ELSE_K BLOCKSTART STATEMENT_R BLOCKEND'''
+
 
 def p_assign(p):
-    '''ASSIGN : VAR EQUALS H_EXPRESSION'''
+    '''ASSIGN : VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL H_EXPRESSION ASSI_H_EXP_NEURAL'''
+
+def p_assi_h_exp_neural(p):
+    '''ASSI_H_EXP_NEURAL : EMPTY'''
+    global temporal_counter
+    if qm.operand_stack:
+
+        right_operand = qm.operand_stack.pop()
+        right_type = qm.types_stack.pop()
+        left_operand = qm.operand_stack.pop()
+        left_type = qm.types_stack.pop()
+
+        result_type = semantic_cube[left_type]['='][right_type]
+
+        if result_type != 'e':
+            result = 't' + str(temporal_counter)
+            # temporal_counter += 1
+            qm.generate_quad('=', right_operand, '_', left_operand)
+            qm.operand_stack.append(result)
+            qm.types_stack.append(result_type)
+
+        else:
+            error_msg = "Assignation type mismatch '{}' '{}' isn't valid".format(left_type, operator, right_type)
+            raise Exception(error_msg)
+
+def p_equals_neural(p):
+    '''EQUALS_NEURAL : EMPTY'''
+    qm.poper.append(p[-1])
+
+def p_assing_var_n(p):
+    '''ASSIGN_VAR_N : EMPTY'''
+    qm.operand_stack.append(p[-1])
+
+    # getting type
+    index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
+    type = FUNC_DIR.functions[last_seen_func]['var_table'][1][index]
+    qm.types_stack.append(type)
+
 
 def p_var(p):
     '''VAR : ID
            | ARRAY'''
+    p[0] = p[1]
 
 def p_array(p):
     '''ARRAY : ID LBRACE INT RBRACE'''
@@ -363,24 +443,42 @@ def p_constant(p):
     p[0] = p[1]
 
 def p_read(p):
-    '''READ : READ_K ID_LIST'''
+    '''READ : READ_K LPAREN ID_LIST RPAREN'''
 
 def p_id_list(p):
-    '''ID_LIST : ID ID_LIST_R'''
+    '''ID_LIST : ID READ_NEURAL ID_LIST_R'''
+
+def p_read_neural(p):
+    '''READ_NEURAL : EMPTY'''
+    qm.generate_quad('read', '_', '_', p[-1])
+
 
 def p_id_list_r(p):
     '''ID_LIST_R : COMMA ID_LIST
                  | EMPTY'''
 
 def p_write(p):
-    '''WRITE : WRITE_K WRITE_LIST'''
+    '''WRITE : WRITE_K LPAREN WRITE_LIST RPAREN'''
 
 def p_write_list(p):
-    '''WRITE_LIST : H_EXPRESSION WRITE_LIST_R'''
+    '''WRITE_LIST : H_EXPRESSION WRITE_LIST_R
+                  | CONSTANT CONSTANT_WRITE_N WRITE_LIST_R'''
+
+def p_constant_write_n(p):
+    '''CONSTANT_WRITE_N : EMPTY'''
+    qm.operand_stack.append(p[-1])
 
 def p_write_list_r(p):
-    '''WRITE_LIST_R : COMMA H_EXPRESSION
-                    | EMPTY'''
+    '''WRITE_LIST_R : WRITE_NEURAL COMMA WRITE_LIST
+                    | WRITE_NEURAL EMPTY'''
+
+def p_write_neural(p):
+    '''WRITE_NEURAL : EMPTY'''
+    result = qm.operand_stack.pop()
+    qm.generate_quad('write', '_', '_', result)
+
+
+
 
 def p_return(p):
     '''RETURN : RETURN_K LPAREN H_EXPRESSION RPAREN SEMICOLON'''
@@ -390,8 +488,11 @@ def p_expression(p):
     '''EXPRESSION : TERM NEURAL_EXPRESSION EXPRESSION_R'''
 
 #4
+temporal_counter = 1
 def p_neural_expression(p):
+
     '''NEURAL_EXPRESSION : EMPTY'''
+    global temporal_counter
     if qm.poper:
         if qm.poper[-1] in ['+', '-']:
             right_operand = qm.operand_stack.pop()
@@ -401,14 +502,20 @@ def p_neural_expression(p):
             left_type = qm.types_stack.pop()
 
             operator = qm.poper.pop()
-            result_type = semantic_cube[left_type, operator, right_type]
+            result_type = semantic_cube[left_type][operator][right_type]
 
             if result_type != 'e':
-                pass
+                result = 't' + str(temporal_counter)
+                temporal_counter += 1
+                qm.generate_quad(operator, left_operand, right_operand, result)
+                qm.operand_stack.append(result)
+                qm.types_stack.append(result_type)
 
             else:
                 error_msg = "Type mismatch '{}' '{}' '{}' isn't valid".format(left_type, operator, right_type)
                 raise Exception(error_msg)
+
+
 
 
 def p_expression_r(p):
@@ -434,6 +541,28 @@ def p_term(p):
 #5
 def p_neural_term(p):
     '''NEURAL_TERM : EMPTY'''
+    global temporal_counter
+    if qm.poper:
+
+        if qm.poper[-1] in ['*', '/']:
+            right_operand = qm.operand_stack.pop()
+            right_type = qm.types_stack.pop()
+
+            left_operand = qm.operand_stack.pop()
+            left_type = qm.types_stack.pop()
+
+            operator = qm.poper.pop()
+            result_type = semantic_cube[left_type][operator][right_type]
+            if result_type != 'e':
+                result = 't' + str(temporal_counter)
+                temporal_counter += 1
+                qm.generate_quad(operator, left_operand, right_operand, result)
+                qm.operand_stack.append(result)
+                qm.types_stack.append(result_type)
+
+            else:
+                error_msg = "Type mismatch '{}' '{}' '{}' isn't valid".format(left_type, operator, right_type)
+                raise Exception(error_msg)
 
 
 
@@ -474,7 +603,6 @@ def p_neural_id_fac(p):
 
 
 
-
 def p_neural_id_cnt_fact(p):
     '''NEURAL_CNT_FACT : EMPTY'''
 
@@ -484,7 +612,10 @@ def p_neural_id_cnt_fact(p):
 def p_s_expression(p):
     '''S_EXPRESSION : EXPRESSION
                     | EXPRESSION GT EXPRESSION
-                    | EXPRESSION LT EXPRESSION'''
+                    | EXPRESSION LT EXPRESSION
+                    | EXPRESSION GTE EXPRESSION
+                    | EXPRESSION LTE EXPRESSION
+                    | EXPRESSION DOUBLEEQUAL EXPRESSION'''
 
 
 def p_h_expression(p):
@@ -502,13 +633,12 @@ def p_principal_block(p):
 
 
 def p_principal_body(p):
-    '''PRINCIPAL_BODY : STATEMENT PRINCIPAL_BODY_R'''
+    '''PRINCIPAL_BODY : STATEMENT PRINCIPAL_BODY_R
+                      | EMPTY'''
 
 
 def p_principal_body_r(p):
-    '''PRINCIPAL_BODY_R : PRINCIPAL_BODY
-                         | EMPTY'''
-
+    '''PRINCIPAL_BODY_R : PRINCIPAL_BODY'''
 
 def p_empty(p):
     '''EMPTY : '''
@@ -528,4 +658,6 @@ with open(input_file_path) as f:
 lexer.input(s)
 parser.parse(s)
 
-# print(FUNC_DIR.functions)
+#print(FUNC_DIR.functions)
+print(qm.QUADS)
+#print(qm.types_stack)

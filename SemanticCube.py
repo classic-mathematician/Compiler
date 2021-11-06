@@ -6,7 +6,7 @@ semantic_cube["int"] = {
     "+" :  {"int" : "int", "float" : "float", "string" : "e"},
     "-" :  {"int" : "int", "float" : "float", "string" : "e"},
     "*" :  {"int" : "int", "float" : "float", "string" : "e"},
-    "/" :  {"int" : "int", "float" : "float", "string" : "e"},
+    "/" :  {"int" : "float", "float" : "float", "string" : "e"},
 
 
     #assignator

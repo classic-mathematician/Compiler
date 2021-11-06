@@ -2,20 +2,24 @@ program chamadc;
 vars{
 int : a, b;
 float : x, y;
+string : i;
 
 }
 
-function float brinca (float a, float c, int d){
-    c = 34 * a + 2 / d;
+function float brinca (float a, float b, float c, int d, int f){
+    c = a;
+    read(b);
+    if (d + f) {
+      c = b * a;
+    }
+
+    a = b;
 
     return (5);
 }
 
 
-function void brinca2 (int z, float w, float c){
-    z = 33;
-}
 
 main() {
-    hola = "mundo";
+
 }
