@@ -71,7 +71,6 @@ tokens = [
 
 reserved = {
     'if' : 'IF_K',
-    'then' : 'THEN_K',
     'else' : 'ELSE_K',
     'while' : 'WHILE_K',
     'do' : 'DO_K',
@@ -340,10 +339,59 @@ def p_flow(p):
 
 def p_loop(p):
     '''LOOP : WHILE_LOOP
+            | DO_WHILE_LOOP SEMICOLON
             | FOR_LOOP'''
 
+def p_do_while_loop(p):
+    '''DO_WHILE_LOOP : DO_K DW_PREV_NEURAL BLOCKSTART STATEMENT_R BLOCKEND WHILE_K LPAREN H_EXPRESSION RPAREN DW_END_NEURAL'''
+
+
+def p_dw_prev_neural(p):
+    '''DW_PREV_NEURAL : EMPTY'''
+    qm.jumps_stack.append(qm.quad_counter)
+
+
+def p_dw_end_neural(p):
+    '''DW_END_NEURAL : EMPTY'''
+    ret = qm.jumps_stack.pop()
+    cond = qm.operand_stack.pop()
+    cond_type = qm.types_stack.pop()
+    if (cond_type == 'int'):
+        qm.generate_quad('GOTOT', cond, '_', ret)
+    else:
+        error_msg = "Type mismatch '{}' type isnt valid for a conditional statement".format(exp_type)
+        raise Exception(error_msg)
+
 def p_while_loop(p):
-    '''WHILE_LOOP : WHILE_K LPAREN H_EXPRESSION RPAREN BLOCKSTART STATEMENT_R BLOCKEND'''
+    '''WHILE_LOOP : WHILE_K WHILE_PREV_NEURAL LPAREN H_EXPRESSION RPAREN WHILE_POST_NEURAL BLOCKSTART STATEMENT_R BLOCKEND WHILE_END_NEURAL'''
+
+#1
+def p_while_prev_neural(p):
+    '''WHILE_PREV_NEURAL : EMPTY'''
+    qm.jumps_stack.append(qm.quad_counter)
+
+#2
+def p_while_post_neural(p):
+    '''WHILE_POST_NEURAL : EMPTY'''
+    exp_type = qm.types_stack.pop()
+    if (exp_type == 'int'):
+        result = qm.operand_stack.pop()
+        qm.generate_quad('GOTOF', result, '_', '_')
+        qm.jumps_stack.append(qm.quad_counter - 1)
+
+    else:
+        error_msg = "Type mismatch '{}' type isnt valid for a conditional statement".format(exp_type)
+        raise Exception(error_msg)
+
+def p_while_end_neural(p):
+    '''WHILE_END_NEURAL : EMPTY'''
+    end = qm.jumps_stack.pop()
+    ret = qm.jumps_stack.pop()
+    qm.generate_quad('GOTO', '_', '_', ret)
+    qm.QUADS[end-1][3] = qm.quad_counter
+
+
+
 
 def p_for_loop(p):
     '''FOR_LOOP : FOR_K ID EQUALS INT TO_K INT DO_K BLOCKSTART STATEMENT_R BLOCKEND'''
@@ -373,7 +421,15 @@ def p_decision_alt(p):
                     | EMPTY'''
 
 def p_else(p):
-    '''ELSE : ELSE_K BLOCKSTART STATEMENT_R BLOCKEND'''
+    '''ELSE : ELSE_NEURAL ELSE_K BLOCKSTART STATEMENT_R BLOCKEND'''
+
+
+def p_else_neural(p):
+    '''ELSE_NEURAL : EMPTY'''
+    qm.generate_quad('GOTO', '_', '_', '_')
+    false = qm.jumps_stack.pop()
+    qm.jumps_stack.append(qm.quad_counter - 1)
+    qm.QUADS[false-1][3] = qm.quad_counter
 
 
 def p_assign(p):
@@ -603,8 +659,12 @@ def p_neural_id_fac(p):
 
 
 
-def p_neural_id_cnt_fact(p):
+def p_neural_cnt_fact(p):
     '''NEURAL_CNT_FACT : EMPTY'''
+    print("cham")
+    qm.operand_stack.append(p[-1])
+    qm.types_stack.append('int')
+    print(p[-1])
 
 
 
@@ -659,5 +719,5 @@ lexer.input(s)
 parser.parse(s)
 
 #print(FUNC_DIR.functions)
-print(qm.QUADS)
+print(qm.print_quads())
 #print(qm.types_stack)

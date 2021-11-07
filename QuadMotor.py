@@ -12,3 +12,8 @@ class QuadMotor(object):
         quad = [operator, left_operand, right_operand, result]
         self.QUADS.append(quad)
         self.quad_counter += 1
+
+
+    def print_quads(self):
+        for (i, item) in enumerate(self.QUADS, start=1):
+            print(i, item)
