@@ -211,6 +211,7 @@ def p_var_list(p):
 def p_var_list2(p):
     '''VAR_LIST2 : COMMA ID VAR_LIST2
                  | EMPTY'''
+
     if last_seen_func != 'base':
         if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
             error_msg = "Variable '{}' has already been declared in the currect scope".format(p[-1])
@@ -256,7 +257,7 @@ def p_proc_decl(p):
 
 
 def p_proc_decl_void(p):
-    '''PROC_DECL_VOID : FUNCTION_K VOID_K ID neural_proc_void_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART PROC_BODY BLOCKEND PROC_DECL'''
+    '''PROC_DECL_VOID : FUNCTION_K VOID_K ID neural_proc_void_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY BLOCKEND POST_FUNC PROC_DECL'''
 
 
 def p_neural_proc_void_id(p):
@@ -270,7 +271,13 @@ def p_neural_proc_void_id(p):
 
 
 def p_proc_decl_return(p):
-    '''PROC_DECL_RETURN : FUNCTION_K TYPE ID neural_proc_return_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART PROC_BODY RETURN BLOCKEND PROC_DECL'''
+    '''PROC_DECL_RETURN : FUNCTION_K TYPE ID neural_proc_return_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY RETURN BLOCKEND POST_FUNC PROC_DECL'''
+
+
+
+def p_post_func(p):
+    '''POST_FUNC : EMPTY'''
+    qm.generate_quad('ENDFunc', '_', '_', '_')
 
 
 def p_neural_proc_return_id(p):
@@ -289,7 +296,6 @@ def p_param_decl(p):
     '''PARAM_DECL : TYPE ID neuro PARAM_DECL_R
                   | EMPTY'''
     #reset of virtual memory
-    vm.reset()
 
 
 def p_neuro(p):
@@ -317,6 +323,52 @@ def p_param_decl_r(p):
 def p_proc_body(p):
     '''PROC_BODY : STATEMENT PROC_BODY_R'''
 
+
+def p_fn_varblock(p):
+    '''FN_VARBLOCK : VARS_K BLOCKSTART LS_VARDECL BLOCKEND'''
+
+    #couting of local variables
+    work_space_size = len(FUNC_DIR.functions[last_seen_func]['var_table'][0])
+    FUNC_DIR.functions[last_seen_func]['size'] = work_space_size
+    vm.reset()
+    FUNC_DIR.functions[last_seen_func]['start_address'] = qm.quad_counter
+
+
+
+def p_ls_vardecl(p):
+    '''LS_VARDECL : TYPE COLON FNVAR_LS SEMICOLON LS_VARDECL_R'''
+
+
+def p_ls_vardecl_r(p):
+    '''LS_VARDECL_R : LS_VARDECL
+                    | EMPTY'''
+
+
+def p_fnvar_ls(p):
+    '''FNVAR_LS : ID FNVAR_LS2'''
+
+
+def p_fnvar_ls2(p):
+    '''FNVAR_LS2 : COMMA ID FNVAR_LS2
+                 | EMPTY'''
+
+    if last_seen_func != 'base':
+        if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+            error_msg = "Variable '{}' has already been declared in the currect scope".format(p[-1])
+            raise Exception(error_msg)
+        else:
+            FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+            FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+
+
+            #virtual memory allocation
+            scope = FUNC_DIR.functions[last_seen_func]['scope']
+            virtual_address = vm.add(scope, last_type_seen)
+            FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
+
+
+
+
 def p_proc_body_r(p):
     '''PROC_BODY_R : PROC_BODY
                    | EMPTY'''
@@ -328,6 +380,7 @@ def p_statement(p):
                  | WRITE SEMICOLON
                  | FLOW
                 '''
+
 
 def p_statement_r(p):
     '''STATEMENT_R : STATEMENT STATEMENT_R
@@ -481,16 +534,69 @@ def p_array(p):
     '''ARRAY : ID LBRACE INT RBRACE'''
 
 def p_func_call(p):
-    '''FUNC_CALL : ID LPAREN ARG_LIST RPAREN'''
+    '''FUNC_CALL : ID PRE_VERIFY LPAREN EXP_LIST POST_VERIFY RPAREN'''
 
-def p_arg_list(p):
-    '''ARG_LIST : VAR ARG_LIST_R
-                | CONSTANT ARG_LIST_R
-                | ARG_LIST_R'''
 
-def p_arglist_r(p):
-    '''ARG_LIST_R : COMMA ARG_LIST
+def p_post_verify(p):
+    '''POST_VERIFY : EMPTY'''
+    global param_counter
+    global last_seen_func
+    global temp_last_seen_function
+
+    if (param_counter -1 != len(FUNC_DIR.functions[last_seen_func]['paramorder'])):
+        error_msg = "Amout mismatch {} arguments were expected, {} were given".format(len(FUNC_DIR.functions[last_seen_func]['paramorder']), param_counter)
+        raise Exception(error_msg)
+    else:
+        param_counter = 0
+        start_address = FUNC_DIR.functions[last_seen_func]['start_address']
+        qm.generate_quad('GOSUB', last_seen_func, start_address, '_')
+        last_seen_func = temp_last_seen_function
+
+
+param_counter = 0
+temp_last_seen_function = "nada"
+
+def p_pre_verify(p):
+    '''PRE_VERIFY : EMPTY'''
+    global param_counter
+    global last_seen_func
+    global temp_last_seen_function
+    if (p[-1] not in FUNC_DIR.functions):
+        error_msg = "Function {} doesnt exist".format(p[-1])
+        raise Exception(error_msg)
+    else:
+        size = FUNC_DIR.functions[p[-1]]['size']
+        qm.generate_quad('ERA', size, '_', '_')
+        param_counter = 1
+        temp_last_seen_function = last_seen_func
+        last_seen_func = p[-1]
+
+
+def p_exp_list(p):
+    '''EXP_LIST : H_EXPRESSION EXP_NEURAL EXP_LIST_2'''
+
+
+def p_exp_neural(p):
+    '''EXP_NEURAL : EMPTY'''
+    global param_counter
+    global last_seen_func
+    arg = qm.operand_stack.pop()
+    arg_type = qm.types_stack.pop()
+    if (arg_type == FUNC_DIR.functions[last_seen_func]['paramorder'][param_counter - 1]):
+        qm.generate_quad('PARAMETER', arg, param_counter-1, '_')
+        print(arg)
+        print(param_counter)
+        param_counter += 1
+
+    else:
+        error_msg = "Argument '{}' doesnt match the function p-signature".format(arg_type)
+        raise Exception(error_msg)
+
+
+def p_exp_list_2(p):
+    '''EXP_LIST_2 : COMMA EXP_LIST
                   | EMPTY'''
+
 
 def p_constant(p):
     '''CONSTANT : INT
@@ -532,7 +638,6 @@ def p_write_neural(p):
     '''WRITE_NEURAL : EMPTY'''
     result = qm.operand_stack.pop()
     qm.generate_quad('write', '_', '_', result)
-
 
 
 
@@ -692,6 +797,7 @@ def p_principal_block(p):
     '''PRINCIPAL_BLOCK : MAIN_K LPAREN RPAREN BLOCKSTART PRINCIPAL_BODY BLOCKEND'''
 
 
+
 def p_principal_body(p):
     '''PRINCIPAL_BODY : STATEMENT PRINCIPAL_BODY_R
                       | EMPTY'''
@@ -718,6 +824,6 @@ with open(input_file_path) as f:
 lexer.input(s)
 parser.parse(s)
 
-#print(FUNC_DIR.functions)
+print(FUNC_DIR.functions)
 print(qm.print_quads())
 #print(qm.types_stack)

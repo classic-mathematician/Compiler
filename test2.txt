@@ -1,15 +1,33 @@
 program chamadc;
 vars{
-int : a;
+int : a, b;
+float : x, y;
+string : i;
 
 }
 
-function float brinca (float c){
-    c = 34;
+function void brinca (int A, int B){
 
-    return (5);
+  vars {
+    float : i;
+  }
+
+  write(i);
 }
+
+function int brinca2 (int A, int B, int C){
+
+  vars {
+    float : d;
+  }
+  write(C);
+  brinca(B , C);
+  write(C);
+
+  return(A);
+}
+
+
 
 main() {
-    hola = "mundo";
 }

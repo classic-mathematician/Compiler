@@ -6,31 +6,18 @@ string : i;
 
 }
 
-function void brinca (int A, int B, int C, int D, int E){
+function void brinca (int A, int B){
 
-  while (A + B * C - D)
-  {
-    if (A + B - C){
-      A = B + C;
-      do {
-        A = A - 1;
-      } while (A + B + C);
-    }
-    else {
-      while (B + C * D){
-        A = B + C * D;
-        B = A - D;
-      }
-    }
-
-
+  vars {
+    float : i;
   }
-  A = B * C;
-  C = A;
+
+  write(i);
 }
 
 
 
-main() {
 
+
+main() {
 }
