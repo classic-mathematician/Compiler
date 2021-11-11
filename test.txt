@@ -1,18 +1,47 @@
-program chamadc;
+program patito;
 vars{
-int : a, b;
-float : x, y;
-string : i;
+
+  int : i, j, k;
+  float : f;
 
 }
 
-function void brinca (int A, int B){
-
+function int uno (int a, int b){
   vars {
-    float : i;
+    float : i, j;
+  }
+  if (a + b){
+    i = a + b * j + i;
+    write(i + j);
+  } else {
+    write(a + b);
   }
 
-  write(i);
+  return (a);
+
+
+
+}
+
+
+function void dos (float a, float g, int b){
+  vars {
+    float : i, j, k;
+  }
+
+  i = a;
+  while(b + b){
+    a = a - k * j;
+    uno(a*2, a+k);
+    g = g * j - k;
+
+
+  }
+
+
+
+
+
 }
 
 
@@ -20,4 +49,10 @@ function void brinca (int A, int B){
 
 
 main() {
+  i = 2;
+  k = i + 1;
+  f = 3.14;
+  uno(i, i);
+
+
 }

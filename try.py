@@ -1,5 +1,10 @@
 from SemanticCube import *
 
+a = 1
 
-dir = {1 : 'joe'}
-dir[2] = 'cham'
+
+def prin():
+    print(a)
+
+
+prin()

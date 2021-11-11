@@ -159,8 +159,9 @@ qm = QuadMotor()
 vm = VirtualMemory()
 FUNC_DIR = FunctionDirectory()
 last_seen_func = "base"
+function_stack = []
 last_type_seen = "base"
-
+first_func = False
 
 
 precedence = (
@@ -181,11 +182,16 @@ def p_program(p):
     '''PROGRAM : PROGRAM_K ID neural_program_id SEMICOLON BLOCK'''
     print("correct syntax")
 
-
+program_name = "nada"
 def p_neural_program_id(p):
     '''neural_program_id : EMPTY'''
     global last_seen_func
+    global function_stack
+    global program_name
+
     last_seen_func = p[-1]
+    program_name = p[-1]
+    function_stack.append(p[-1])
 
     FUNC_DIR.program_name = p[-1]
     FUNC_DIR.declare_function(p[-1], "program_type", "g_scope",)
@@ -262,8 +268,12 @@ def p_proc_decl_void(p):
 
 def p_neural_proc_void_id(p):
     '''neural_proc_void_id : EMPTY'''
+    global first_func
     global last_seen_func
     global last_type_seen
+    if (first_func == False):
+        qm.generate_quad('GOTO_MAIN', '_', '_', '_')
+        first_func = True
     last_seen_func = p[-1]
     last_type_seen = p[-2]
     FUNC_DIR.declare_function(last_seen_func, last_type_seen, "l_scope")
@@ -282,6 +292,10 @@ def p_post_func(p):
 
 def p_neural_proc_return_id(p):
     '''neural_proc_return_id : EMPTY'''
+    global first_func
+    if (first_func == False):
+        qm.generate_quad('GOTO_MAIN', '_', '_', '_')
+        first_func = True
     global last_seen_func
     last_seen_func = p[-1]
     FUNC_DIR.declare_function(last_seen_func, last_type_seen, "l_scope")
@@ -322,7 +336,6 @@ def p_param_decl_r(p):
 
 def p_proc_body(p):
     '''PROC_BODY : STATEMENT PROC_BODY_R'''
-
 
 def p_fn_varblock(p):
     '''FN_VARBLOCK : VARS_K BLOCKSTART LS_VARDECL BLOCKEND'''
@@ -540,17 +553,15 @@ def p_func_call(p):
 def p_post_verify(p):
     '''POST_VERIFY : EMPTY'''
     global param_counter
-    global last_seen_func
-    global temp_last_seen_function
 
-    if (param_counter -1 != len(FUNC_DIR.functions[last_seen_func]['paramorder'])):
-        error_msg = "Amout mismatch {} arguments were expected, {} were given".format(len(FUNC_DIR.functions[last_seen_func]['paramorder']), param_counter)
+    if (param_counter -1 != len(FUNC_DIR.functions[p[-4]]['paramorder'])):
+        error_msg = "Amount mismatch {} arguments were expected, {} were given".format(len(FUNC_DIR.functions[p[-4]]['paramorder']), param_counter -1)
         raise Exception(error_msg)
     else:
         param_counter = 0
-        start_address = FUNC_DIR.functions[last_seen_func]['start_address']
-        qm.generate_quad('GOSUB', last_seen_func, start_address, '_')
-        last_seen_func = temp_last_seen_function
+        start_address = FUNC_DIR.functions[p[-4]]['start_address']
+        qm.generate_quad('GOSUB', p[-4], start_address, '_')
+
 
 
 param_counter = 0
@@ -559,8 +570,6 @@ temp_last_seen_function = "nada"
 def p_pre_verify(p):
     '''PRE_VERIFY : EMPTY'''
     global param_counter
-    global last_seen_func
-    global temp_last_seen_function
     if (p[-1] not in FUNC_DIR.functions):
         error_msg = "Function {} doesnt exist".format(p[-1])
         raise Exception(error_msg)
@@ -568,8 +577,6 @@ def p_pre_verify(p):
         size = FUNC_DIR.functions[p[-1]]['size']
         qm.generate_quad('ERA', size, '_', '_')
         param_counter = 1
-        temp_last_seen_function = last_seen_func
-        last_seen_func = p[-1]
 
 
 def p_exp_list(p):
@@ -584,8 +591,6 @@ def p_exp_neural(p):
     arg_type = qm.types_stack.pop()
     if (arg_type == FUNC_DIR.functions[last_seen_func]['paramorder'][param_counter - 1]):
         qm.generate_quad('PARAMETER', arg, param_counter-1, '_')
-        print(arg)
-        print(param_counter)
         param_counter += 1
 
     else:
@@ -766,10 +771,8 @@ def p_neural_id_fac(p):
 
 def p_neural_cnt_fact(p):
     '''NEURAL_CNT_FACT : EMPTY'''
-    print("cham")
     qm.operand_stack.append(p[-1])
     qm.types_stack.append('int')
-    print(p[-1])
 
 
 
@@ -794,7 +797,16 @@ def p_h_expression_r(p):
 
 
 def p_principal_block(p):
-    '''PRINCIPAL_BLOCK : MAIN_K LPAREN RPAREN BLOCKSTART PRINCIPAL_BODY BLOCKEND'''
+    '''PRINCIPAL_BLOCK : MAIN_K MAIN_NEURAL LPAREN RPAREN BLOCKSTART PRINCIPAL_BODY BLOCKEND'''
+
+
+def p_main_neural(p):
+    '''MAIN_NEURAL : EMPTY'''
+    global last_seen_func
+    global first_func
+    if (first_func == True):
+        qm.QUADS[0][3] = qm.quad_counter
+    last_seen_func = program_name
 
 
 
