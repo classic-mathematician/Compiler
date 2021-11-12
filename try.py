@@ -1,10 +1,3 @@
-from SemanticCube import *
+a = "gay"
 
-a = 1
-
-
-def prin():
-    print(a)
-
-
-prin()
+print(isinstance(a, str))

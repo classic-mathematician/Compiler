@@ -3,21 +3,22 @@ vars{
 
   int : i, j, k;
   float : f;
+  string : o;
 
 }
 
-function int uno (int a, int b){
+function void uno (int a, int b){
   vars {
     float : i, j;
   }
-  if (a + b){
+  if (a + 0){
     i = a + b * j + i;
     write(i + j);
+    uno(a, a);
   } else {
     write(a + b);
   }
 
-  return (a);
 
 
 
@@ -53,6 +54,8 @@ main() {
   k = i + 1;
   f = 3.14;
   uno(i, i);
-
+  f = 4.3;
+  o = "cham";
+  o = "gay";
 
 }

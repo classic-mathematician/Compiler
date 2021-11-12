@@ -22,14 +22,13 @@ class VirtualMemory(object):
         self.global_variables = [1000, 3000, 6000]
         self.local_variables = [10000, 13000, 16000]
         self.temporal_variables = [20000, 23000, 26000]
-        self.constants = 30000
+        self.constants = [30000, 33000, 36000]
 
 
     def reset(self):
         self.global_variables = [1000, 3000, 6000]
         self.local_variables = [10000, 13000, 16000]
         self.temporal_variables = [20000, 23000, 26000]
-        self.constants = 30000
 
 
     def add(self, scope, type):
@@ -83,6 +82,17 @@ class VirtualMemory(object):
                 return virtual_address
 
         if (scope == 'c_scope'):
-            virtual_address = self.constants
-            self.constants += 1
-            return virtual_address
+            if (type == 'int'):
+                virtual_address = self.constants[0]
+                self.constants[0] += 1
+                return virtual_address
+
+            elif (type == 'float'):
+                virtual_address = self.constants[1]
+                self.constants[1] += 1
+                return virtual_address
+
+            else:
+                virtual_address = self.constants[2]
+                self.constants[2] += 1
+                return virtual_address

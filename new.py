@@ -158,6 +158,7 @@ import  ply.yacc as yacc
 qm = QuadMotor()
 vm = VirtualMemory()
 FUNC_DIR = FunctionDirectory()
+CNT_TABLE = [[],[]]
 last_seen_func = "base"
 function_stack = []
 last_type_seen = "base"
@@ -266,6 +267,7 @@ def p_proc_decl_void(p):
     '''PROC_DECL_VOID : FUNCTION_K VOID_K ID neural_proc_void_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY BLOCKEND POST_FUNC PROC_DECL'''
 
 
+
 def p_neural_proc_void_id(p):
     '''neural_proc_void_id : EMPTY'''
     global first_func
@@ -288,6 +290,8 @@ def p_proc_decl_return(p):
 def p_post_func(p):
     '''POST_FUNC : EMPTY'''
     qm.generate_quad('ENDFunc', '_', '_', '_')
+    global temporal_counter
+    temporal_counter = 1
 
 
 def p_neural_proc_return_id(p):
@@ -609,6 +613,7 @@ def p_constant(p):
                 | STRING'''
     p[0] = p[1]
 
+
 def p_read(p):
     '''READ : READ_K LPAREN ID_LIST RPAREN'''
 
@@ -656,7 +661,6 @@ def p_expression(p):
 #4
 temporal_counter = 1
 def p_neural_expression(p):
-
     '''NEURAL_EXPRESSION : EMPTY'''
     global temporal_counter
     if qm.poper:
@@ -771,11 +775,25 @@ def p_neural_id_fac(p):
 
 def p_neural_cnt_fact(p):
     '''NEURAL_CNT_FACT : EMPTY'''
+    type = "unassigned"
+
     qm.operand_stack.append(p[-1])
-    qm.types_stack.append('int')
+    if (isinstance(p[-1], int)):
+        qm.types_stack.append('int')
+        type = 'int'
 
+    if (isinstance(p[-1], float)):
+        qm.types_stack.append('float')
+        type = 'float'
 
+    if (isinstance(p[-1], str)):
+        qm.types_stack.append('string')
+        type = 'string'
 
+    if (p[-1] not in CNT_TABLE[0]):
+        CNT_TABLE[0].append(p[-1])
+        virtual_address = vm.add('c_scope', type)
+        CNT_TABLE[1].append(virtual_address)
 
 def p_s_expression(p):
     '''S_EXPRESSION : EXPRESSION
@@ -838,4 +856,5 @@ parser.parse(s)
 
 print(FUNC_DIR.functions)
 print(qm.print_quads())
+print(CNT_TABLE)
 #print(qm.types_stack)
