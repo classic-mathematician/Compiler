@@ -14,6 +14,24 @@ class FunctionDirectory(object):
     def add_var_table(self, id, var_table):
         self.functions[id]["var_table"]
 
+#virtual memory map
+
+# global variables 1000-9999
+    # 1000-2999 int
+    # 3000- 5999 float
+    # 6000 - 9999 strings
+# local variables 10,000 - 19,9999
+    # 10,000 - 12,999 int
+    # 13,000 - 15,999 float
+    # 16,000 - 19,999 string
+# temporal variables 20,000 - 29,999
+    # 20,000 - 22,999 int
+    # 23,000 - 25999 float
+    # 26,000 - 29999 stringe
+# constantes 30,000 - 34,999
+
+
+
 
 
 class VirtualMemory(object):

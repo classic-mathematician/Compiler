@@ -302,9 +302,13 @@ def p_neural_proc_return_id(p):
         first_func = True
     global last_seen_func
     last_seen_func = p[-1]
+
     FUNC_DIR.declare_function(last_seen_func, last_type_seen, "l_scope")
     FUNC_DIR.functions[FUNC_DIR.program_name]['var_table'][0].append(p[-1])
     FUNC_DIR.functions[FUNC_DIR.program_name]['var_table'][1].append(last_type_seen)
+    virtual_add = vm.add("g_scope", last_type_seen)
+    FUNC_DIR.functions[FUNC_DIR.program_name]['var_table'][2].append(virtual_add)
+
 
 
 def p_neural_param_decl(p):
@@ -521,6 +525,8 @@ def p_assi_h_exp_neural(p):
             result = 't' + str(temporal_counter)
             # temporal_counter += 1
             qm.generate_quad('=', right_operand, '_', left_operand)
+
+            result = vm.add("t_scope", result_type)
             qm.operand_stack.append(result)
             qm.types_stack.append(result_type)
 
@@ -534,12 +540,30 @@ def p_equals_neural(p):
 
 def p_assing_var_n(p):
     '''ASSIGN_VAR_N : EMPTY'''
-    qm.operand_stack.append(p[-1])
 
     # getting type
-    index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
-    type = FUNC_DIR.functions[last_seen_func]['var_table'][1][index]
-    qm.types_stack.append(type)
+    if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+        index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
+        operand = FUNC_DIR.functions[last_seen_func]['var_table'][2][index]
+        qm.operand_stack.append(operand)
+        type = FUNC_DIR.functions[last_seen_func]['var_table'][1][index]
+        qm.types_stack.append(type)
+
+
+    elif (p[-1] in FUNC_DIR.functions[program_name]['var_table'][0]):
+        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-1])
+        operand = FUNC_DIR.functions[program_name]['var_table'][2][index]
+        qm.operand_stack.append(operand)
+        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
+        qm.types_stack.append(type)
+
+
+    else:
+        error_msg = "Variable {} hasnt been declared in the current scope and nor in the global scope".format(p[-1])
+        raise Exception(error_msg)
+
+
+
 
 
 def p_var(p):
@@ -565,6 +589,11 @@ def p_post_verify(p):
         param_counter = 0
         start_address = FUNC_DIR.functions[p[-4]]['start_address']
         qm.generate_quad('GOSUB', p[-4], start_address, '_')
+        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-4])
+        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
+        result = FUNC_DIR.functions[program_name]['var_table'][2][index]
+        temporal = vm.add('t_scope', type)
+        qm.generate_quad('=', result, '_', temporal)
 
 
 
@@ -638,7 +667,10 @@ def p_write_list(p):
 
 def p_constant_write_n(p):
     '''CONSTANT_WRITE_N : EMPTY'''
-    qm.operand_stack.append(p[-1])
+    index = CNT_TABLE[0].index(p[-1])
+    operand = CNT_TABLE[1][index]
+
+    qm.operand_stack.append(operand)
 
 def p_write_list_r(p):
     '''WRITE_LIST_R : WRITE_NEURAL COMMA WRITE_LIST
@@ -677,6 +709,7 @@ def p_neural_expression(p):
             if result_type != 'e':
                 result = 't' + str(temporal_counter)
                 temporal_counter += 1
+                result = vm.add("t_scope", result_type)
                 qm.generate_quad(operator, left_operand, right_operand, result)
                 qm.operand_stack.append(result)
                 qm.types_stack.append(result_type)
@@ -726,6 +759,7 @@ def p_neural_term(p):
             if result_type != 'e':
                 result = 't' + str(temporal_counter)
                 temporal_counter += 1
+                result = vm.add("t_scope", result_type)
                 qm.generate_quad(operator, left_operand, right_operand, result)
                 qm.operand_stack.append(result)
                 qm.types_stack.append(result_type)
@@ -760,11 +794,20 @@ def p_factor_(p):
 #1
 def p_neural_id_fac(p):
     '''NEURAL_ID_FAC : EMPTY'''
+    local = False
     if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
 
-        qm.operand_stack.append(p[-1])
         index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
+        operand = FUNC_DIR.functions[last_seen_func]['var_table'][2][index]
         type = FUNC_DIR.functions[last_seen_func]['var_table'][1][index]
+        qm.operand_stack.append(operand)
+        qm.types_stack.append(type)
+
+    elif (p[-1] in FUNC_DIR.functions[program_name]['var_table'][0]):
+        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-1])
+        operand = FUNC_DIR.functions[program_name]['var_table'][2][index]
+        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
+        qm.operand_stack.append(operand)
         qm.types_stack.append(type)
 
     else:
@@ -777,7 +820,6 @@ def p_neural_cnt_fact(p):
     '''NEURAL_CNT_FACT : EMPTY'''
     type = "unassigned"
 
-    qm.operand_stack.append(p[-1])
     if (isinstance(p[-1], int)):
         qm.types_stack.append('int')
         type = 'int'
@@ -794,6 +836,11 @@ def p_neural_cnt_fact(p):
         CNT_TABLE[0].append(p[-1])
         virtual_address = vm.add('c_scope', type)
         CNT_TABLE[1].append(virtual_address)
+
+    index = CNT_TABLE[0].index(p[-1])
+    operand = CNT_TABLE[1][index]
+
+    qm.operand_stack.append(operand)
 
 def p_s_expression(p):
     '''S_EXPRESSION : EXPRESSION

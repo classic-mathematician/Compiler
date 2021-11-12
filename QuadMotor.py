@@ -1,3 +1,6 @@
+
+#  a = f; -> = a f
+
 class QuadMotor(object):
     def __init__(self):
         self.QUADS = []
