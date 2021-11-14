@@ -29,7 +29,7 @@ class FunctionDirectory(object):
     # 23,000 - 25999 float
     # 26,000 - 29999 stringe
 # constantes 30,000 - 34,999
-
+    
 
 
 

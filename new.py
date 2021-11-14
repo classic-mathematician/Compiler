@@ -901,7 +901,36 @@ with open(input_file_path) as f:
 lexer.input(s)
 parser.parse(s)
 
+# creation of obj file with the funciton directory
+import json
+
+
+with open('obj.txt', 'w') as file:
+     file.write(json.dumps(FUNC_DIR.functions))
+
+
+# creation of the file containing the table of constants
+
+temp_dict = {"temporal" : CNT_TABLE}
+print(temp_dict)
+
+with open('constants.txt', 'w') as file:
+     file.write(json.dumps(temp_dict))
+
+
+#creation of the file containing the quadruples
+
+
+temp_dict = {"temporal" : qm.QUADS}
+with open('quads.txt', 'w') as file:
+     file.write(json.dumps(temp_dict))
+
+
+
+
+
 print(FUNC_DIR.functions)
+
 print(qm.print_quads())
 print(CNT_TABLE)
 #print(qm.types_stack)
