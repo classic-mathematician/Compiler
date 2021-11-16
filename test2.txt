@@ -1,23 +1,28 @@
 program chamadc;
 vars{
 int : a, b;
-float : x, y;
 string : i;
 
 }
 
-function void brinca (int A, int B){
-
+function int uno (int a, int b){
   vars {
     float : i;
   }
 
-  write(i);
+  i = a;
+
+  return(5  * a);
+
+
+
 }
 
 
-
-
-
 main() {
+
+  b = 3;
+  a = 2 + b;
+  uno(a + b, b);
+
 }

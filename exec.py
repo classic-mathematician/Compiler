@@ -1,5 +1,6 @@
 import ast
 import json
+from virtualMachine import *
 
 #Reading of the function directory
 
@@ -28,8 +29,59 @@ QUADS_DIR = ast.literal_eval(contents)
 file.close()
 QUADS = QUADS_DIR['temporal']
 
-cnt = 1
 
-for quad in QUADS:
-    print(cnt, quad)
-    cnt += 1
+
+program_name = next(iter(FUNC_DIR))
+print(program_name)
+
+
+# Creation of memory
+virtual_machine = VirtualMachine()
+
+
+# assignation of global memory
+vars = FUNC_DIR[program_name]['var_table'][2]
+
+
+for var in vars:
+    if (var >= 1000) and (var <= 2999):
+        virtual_machine.global_memory.integers[0].append(var)
+        virtual_machine.global_memory.integers[1].append(None)
+
+    if (var >= 3000) and (var <= 5999):
+        virtual_machine.global_memory.floats[0].append(var)
+        virtual_machine.global_memory.floats[1].append(None)
+
+
+    if (var >= 6000) and (var <= 9999):
+        virtual_machine.global_memory.strings[0].append(var)
+        virtual_machine.global_memory.strings[1].append(None)
+
+
+temp = CNT_TABLE[0]
+CNT_TABLE[0] = CNT_TABLE[1]
+CNT_TABLE[1] = temp
+
+
+virtual_machine.global_memory.name = "global"
+virtual_machine.global_memory.print_memory()
+virtual_machine.quads = QUADS
+virtual_machine.print_quads()
+virtual_machine.constants = CNT_TABLE
+#virtual_machine.print_constants()
+print(virtual_machine.global_memory.integers)
+print(virtual_machine.find_in_memory(6000))
+print(FUNC_DIR)
+
+
+
+
+
+
+
+
+
+
+
+
+#

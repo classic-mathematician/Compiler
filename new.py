@@ -531,7 +531,7 @@ def p_assi_h_exp_neural(p):
             qm.types_stack.append(result_type)
 
         else:
-            error_msg = "Assignation type mismatch '{}' '{}' isn't valid".format(left_type, operator, right_type)
+            error_msg = "Assignation type mismatch {} {} {} isn't valid".format(left_type, '=', right_type)
             raise Exception(error_msg)
 
 def p_equals_neural(p):
@@ -888,7 +888,7 @@ def p_empty(p):
 
 parser = yacc.yacc()
 
-input_file_path = "test.txt"
+input_file_path = "test2.txt"
 
 s = ""
 with open(input_file_path) as f:
@@ -912,7 +912,6 @@ with open('obj.txt', 'w') as file:
 # creation of the file containing the table of constants
 
 temp_dict = {"temporal" : CNT_TABLE}
-print(temp_dict)
 
 with open('constants.txt', 'w') as file:
      file.write(json.dumps(temp_dict))
@@ -929,8 +928,30 @@ with open('quads.txt', 'w') as file:
 
 
 
-print(FUNC_DIR.functions)
 
-print(qm.print_quads())
-print(CNT_TABLE)
-#print(qm.types_stack)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
