@@ -13,9 +13,6 @@ class Cham(object):
 cham = Cham()
 
 
-cham.write()
+a = 1 > 2
 
-a = [1,2,3]
-print(a[-1])
-a.append(4)
-print(a[-1])
+print(a)

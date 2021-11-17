@@ -20,7 +20,7 @@ semantic_cube["int"] = {
     ">=" :  {"int" : "int", "float" : "int", "string" : "e"},
     "<=" :  {"int" : "int", "float" : "int", "string" : "e"},
     "&&" :  {"int" : "int", "float" : "int", "string" : "e"},
-    "|" :  {"int" : "int", "float" : "int", "string" : "e"},
+    "||" :  {"int" : "int", "float" : "int", "string" : "e"},
 }
 
 semantic_cube["float"] = {

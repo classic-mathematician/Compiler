@@ -113,7 +113,7 @@ t_LTE = r'\<\='
 t_GTE = r'\>\='
 t_DOUBLEEQUAL = r'\=\='
 t_AND = r'\&\&'
-t_OR = r'\|'
+t_OR = r'\|\|'
 t_COMMENT = r'\%\%.*'
 t_ignore  = ' \t'
 t_COLON = r'\:'
@@ -394,9 +394,10 @@ def p_proc_body_r(p):
     '''PROC_BODY_R : PROC_BODY
                    | EMPTY'''
 
+
 def p_statement(p):
     '''STATEMENT : ASSIGN SEMICOLON
-                 | FUNC_CALL SEMICOLON
+                 | V_FUNC_CALL SEMICOLON
                  | READ SEMICOLON
                  | WRITE SEMICOLON
                  | FLOW
@@ -407,14 +408,17 @@ def p_statement_r(p):
     '''STATEMENT_R : STATEMENT STATEMENT_R
                    | EMPTY'''
 
+
 def p_flow(p):
     '''FLOW : DECISION
             | LOOP'''
+
 
 def p_loop(p):
     '''LOOP : WHILE_LOOP
             | DO_WHILE_LOOP SEMICOLON
             | FOR_LOOP'''
+
 
 def p_do_while_loop(p):
     '''DO_WHILE_LOOP : DO_K DW_PREV_NEURAL BLOCKSTART STATEMENT_R BLOCKEND WHILE_K LPAREN H_EXPRESSION RPAREN DW_END_NEURAL'''
@@ -574,9 +578,8 @@ def p_var(p):
 def p_array(p):
     '''ARRAY : ID LBRACE INT RBRACE'''
 
-def p_func_call(p):
-    '''FUNC_CALL : ID PRE_VERIFY LPAREN EXP_LIST POST_VERIFY RPAREN'''
-
+def p_v_func_call(p):
+    '''V_FUNC_CALL : ID PRE_VERIFY LPAREN EXP_LIST POST_VERIFY RPAREN'''
 
 def p_post_verify(p):
     '''POST_VERIFY : EMPTY'''
@@ -603,12 +606,20 @@ temp_last_seen_function = "nada"
 def p_pre_verify(p):
     '''PRE_VERIFY : EMPTY'''
     global param_counter
+
+    type = FUNC_DIR.functions[p[-1]]['type']
+
     if (p[-1] not in FUNC_DIR.functions):
         error_msg = "Function {} doesnt exist".format(p[-1])
         raise Exception(error_msg)
+
+    #elif (type != 'void'):
+    #    error_msg = "Error, trying to invoke a non-void type function -{}- without linking it to a recieving variable".format(p[-1])
+    #    raise Exception(error_msg)
+
     else:
         size = FUNC_DIR.functions[p[-1]]['size']
-        qm.generate_quad('ERA', size, '_', '_')
+        qm.generate_quad('ERA', size, p[-1], '_')
         param_counter = 1
 
 
@@ -843,12 +854,60 @@ def p_neural_cnt_fact(p):
     qm.operand_stack.append(operand)
 
 def p_s_expression(p):
-    '''S_EXPRESSION : EXPRESSION
-                    | EXPRESSION GT EXPRESSION
-                    | EXPRESSION LT EXPRESSION
-                    | EXPRESSION GTE EXPRESSION
-                    | EXPRESSION LTE EXPRESSION
-                    | EXPRESSION DOUBLEEQUAL EXPRESSION'''
+    '''S_EXPRESSION : EXPRESSION S_EXPRESSION_R'''
+
+
+def p_neural_exp(p):
+    '''NEURAL_EXP : EMPTY'''
+
+    global temporal_counter
+    if qm.poper:
+        if qm.poper[-1] in ['>', '<', '>=', '<=', '==']:
+            right_operand = qm.operand_stack.pop()
+            right_type = qm.types_stack.pop()
+
+            left_operand = qm.operand_stack.pop()
+            left_type = qm.types_stack.pop()
+
+            operator = qm.poper.pop()
+            result_type = semantic_cube[left_type][operator][right_type]
+            if result_type != 'e':
+                result = 't' + str(temporal_counter)
+                temporal_counter += 1
+                result = vm.add("t_scope", result_type)
+                qm.generate_quad(operator, left_operand, right_operand, result)
+                qm.operand_stack.append(result)
+                qm.types_stack.append(result_type)
+
+            else:
+                error_msg = "Type mismatch '{}' '{}' '{}' isn't valid".format(left_type, operator, right_type)
+                raise Exception(error_msg)
+
+def p_s_expression_r(p):
+    '''S_EXPRESSION_R : CONDI NEURAL_CONDI EXPRESSION NEURAL_EXP
+                      | EMPTY'''
+
+
+def p_neural_condi(p):
+    '''NEURAL_CONDI : EMPTY'''
+
+    qm.poper.append(p[-1])
+
+
+
+def p_condi(p):
+    '''CONDI : GT
+             | LT
+             | LTE
+             | GTE
+             | DOUBLEEQUAL
+             | AND
+             | OR'''
+
+    p[0] = p[1]
+
+
+
 
 
 def p_h_expression(p):
@@ -888,7 +947,7 @@ def p_empty(p):
 
 parser = yacc.yacc()
 
-input_file_path = "test2.txt"
+input_file_path = "test.txt"
 
 s = ""
 with open(input_file_path) as f:

@@ -1,6 +1,7 @@
 program chamadc;
 vars{
-int : a, b;
+int : x, y;
+float : a, b;
 string : i;
 
 }
@@ -22,7 +23,7 @@ function int uno (int a, int b){
 main() {
 
   b = 3;
-  a = 2 + b;
-  uno(a + b, b);
+  a = 2 / b;
+  uno(x,y);
 
 }

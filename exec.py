@@ -37,6 +37,7 @@ print(program_name)
 
 # Creation of memory
 virtual_machine = VirtualMachine()
+virtual_machine.func_dir = FUNC_DIR
 
 
 # assignation of global memory
