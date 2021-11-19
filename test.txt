@@ -7,15 +7,14 @@ vars{
 
 }
 
-function int uno (int a, int b){
+function int uno (int a, int b, int c){
   vars {
-    float : i, j;
+    float : k;
+    int : p[2][8], q[3], po;
+
   }
   if (a + b == b - 2){
-    f = a;
-    i = a + b * j + i;
-    write(i + j);
-    uno(a + b, b);
+    write(a);
   } else {
     write(a + b);
   }
@@ -30,13 +29,14 @@ function int uno (int a, int b){
 function void dos (float a, float g, int b){
   vars {
     float : i, j, k;
+
   }
 
   i = a;
   while(b + b){
     a = a - k * j;
 
-    uno(a*2, a+k);
+    uno(a*2, a+k, b);
     g = g * j - k;
 
 
@@ -56,7 +56,7 @@ main() {
   i = 2;
   k = i + 1;
   f = 3.14;
-  uno(i, i);
+  uno(i, i, i);
 
 
 

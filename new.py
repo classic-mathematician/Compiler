@@ -212,11 +212,11 @@ def p_var_decl_r(p):
                   | EMPTY'''
 
 def p_var_list(p):
-    '''VAR_LIST : ID VAR_LIST2'''
+    '''VAR_LIST : VAR VAR_LIST2'''
 
 
 def p_var_list2(p):
-    '''VAR_LIST2 : COMMA ID VAR_LIST2
+    '''VAR_LIST2 : COMMA VAR VAR_LIST2
                  | EMPTY'''
 
     if last_seen_func != 'base':
@@ -224,15 +224,18 @@ def p_var_list2(p):
             error_msg = "Variable '{}' has already been declared in the currect scope".format(p[-1])
             raise Exception(error_msg)
         else:
-            FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
-            FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
-            FUNC_DIR.functions[last_seen_func]['paramorder'].append(last_type_seen)
+            if (p[-1] != None):
+
+                FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+                FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+                FUNC_DIR.functions[last_seen_func]['paramorder'].append(last_type_seen)
 
 
-            #virtual memory allocation
-            scope = FUNC_DIR.functions[last_seen_func]['scope']
-            virtual_address = vm.add(scope, last_type_seen)
-            FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
+                #virtual memory allocation
+                scope = FUNC_DIR.functions[last_seen_func]['scope']
+                virtual_address = vm.add(scope, last_type_seen)
+                FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
+
 
 
 
@@ -248,6 +251,7 @@ def p_type(p):
             | STRING_K NEURAL_TYPE'''
     global last_type_seen
     last_type_seen = p[1]
+    p[0] = 1
 
 
 
@@ -315,7 +319,7 @@ def p_neural_param_decl(p):
     '''neural_param_decl : EMPTY'''
 
 def p_param_decl(p):
-    '''PARAM_DECL : TYPE ID neuro PARAM_DECL_R
+    '''PARAM_DECL : TYPE VAR neuro PARAM_DECL_R
                   | EMPTY'''
     #reset of virtual memory
 
@@ -335,7 +339,6 @@ def p_neuro(p):
             scope = FUNC_DIR.functions[last_seen_func]['scope']
             virtual_address = vm.add(scope, last_type_seen)
             FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
-
 
 
 def p_param_decl_r(p):
@@ -366,28 +369,29 @@ def p_ls_vardecl_r(p):
 
 
 def p_fnvar_ls(p):
-    '''FNVAR_LS : ID FNVAR_LS2'''
+    '''FNVAR_LS : VAR FNVAR_LS2'''
+
 
 
 def p_fnvar_ls2(p):
-    '''FNVAR_LS2 : COMMA ID FNVAR_LS2
+    '''FNVAR_LS2 : COMMA FNVAR_LS
                  | EMPTY'''
-
     if last_seen_func != 'base':
+
         if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
             error_msg = "Variable '{}' has already been declared in the currect scope".format(p[-1])
             raise Exception(error_msg)
         else:
-            FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
-            FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+            if (p[-1] != None):
+
+                FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+                FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
 
 
-            #virtual memory allocation
-            scope = FUNC_DIR.functions[last_seen_func]['scope']
-            virtual_address = vm.add(scope, last_type_seen)
-            FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
-
-
+                #virtual memory allocation
+                scope = FUNC_DIR.functions[last_seen_func]['scope']
+                virtual_address = vm.add(scope, last_type_seen)
+                FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
 
 
 def p_proc_body_r(p):
@@ -397,7 +401,7 @@ def p_proc_body_r(p):
 
 def p_statement(p):
     '''STATEMENT : ASSIGN SEMICOLON
-                 | V_FUNC_CALL SEMICOLON
+                 | FUNC_CALL SEMICOLON
                  | READ SEMICOLON
                  | WRITE SEMICOLON
                  | FLOW
@@ -513,6 +517,7 @@ def p_else_neural(p):
 def p_assign(p):
     '''ASSIGN : VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL H_EXPRESSION ASSI_H_EXP_NEURAL'''
 
+
 def p_assi_h_exp_neural(p):
     '''ASSI_H_EXP_NEURAL : EMPTY'''
     global temporal_counter
@@ -566,20 +571,134 @@ def p_assing_var_n(p):
         error_msg = "Variable {} hasnt been declared in the current scope and nor in the global scope".format(p[-1])
         raise Exception(error_msg)
 
+#array access
+def p_arr_ac(p):
+    '''ARR_AC : ID ARR_ID_NP DIM_AC'''
 
 
+def p_arr_id_np(p):
+    '''ARR_ID_NP : EMPTY'''
+    if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
 
+
+        index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
+        #getting its virtual address
+        operand = FUNC_DIR.functions[last_seen_func]['var_table'][2][index]
+        #getting the type
+        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
+
+        qm.operand_stack.append(operand)
+        qm.types_stack.append(type)
+
+    elif (p[-1] in FUNC_DIR.functions[program_name]['var_table'][0]):
+        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-1])
+        #getting its virtual address
+        operand = FUNC_DIR.functions[program_name]['var_table'][2][index]
+        #getting the type
+        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
+
+        qm.operand_stack.append(operand)
+        qm.types_stack.append(type)
+
+    else:
+        error_msg = "{} hast been declared in the current program".format(p[-1])
+        raise Exception(error_msg)
+
+
+def p_dim_ac(p):
+    '''DIM_AC : LBRACE H_EXPRESSION RBRACE DIM_AC_R'''
+
+
+def p_dim_ac_r(p):
+    '''DIM_AC_R : DIM_AC
+                | EMPTY'''
 
 def p_var(p):
     '''VAR : ID
-           | ARRAY'''
+           | ARRAY '''
     p[0] = p[1]
 
-def p_array(p):
-    '''ARRAY : ID LBRACE INT RBRACE'''
 
-def p_v_func_call(p):
-    '''V_FUNC_CALL : ID PRE_VERIFY LPAREN EXP_LIST POST_VERIFY RPAREN'''
+from toolsE import *
+
+
+def p_array(p):
+    '''ARRAY : ID ARR_ID_NP DIM'''
+    global program_name
+    global dims
+    global arr_size
+    dims = 0
+    size = 0
+
+
+    if (len(arr_size) > 2):
+        error_msg = "Dimensions over R2 arent currently supported"
+        raise Exception(error_msg)
+
+
+    if (arr_size[0] <= 0):
+        error_msg = "Dimensions under R0 arent currently supported"
+        raise Exception(error_msg)
+
+    size = 1
+    for item in arr_size:
+        size = size * item
+
+
+    scope = 'undef'
+    if (last_seen_func == program_name):
+        scope = 'g_scope'
+    else:
+        scope = 'l_scope'
+
+
+    print(arr_size)
+
+
+    virtual_address = vm.add_arr(scope, last_type_seen, size)
+
+    FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
+
+    arr_size = []
+
+last_arr_id = None
+def p_arr_id_np(p):
+    '''ARR_ID_NP : EMPTY'''
+    global last_arr_id
+    last_arr_id = p[-1]
+    FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
+    FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
+    FUNC_DIR.functions[last_seen_func]['var_table'][3][p[-1]] = 'array'
+    FUNC_DIR.functions[last_seen_func]['var_table'][4][p[-1]] = [0, 0]
+
+arr_size = []
+def p_dim(p):
+    '''DIM : LBRACE INT LIM_NP RBRACE DIM_R'''
+    p[0] = p[-2]
+
+
+
+dims = 0
+def p_lim_np(p):
+    '''LIM_NP : EMPTY'''
+    global last_arr_id
+    global arr_size
+    global dims
+    arr_size.append(p[-1])
+    print(dims)
+    FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id][dims] = p[-1]
+    dims += 1
+
+def p_dim_r(p):
+    '''DIM_R : DIM
+             | EMPTY'''
+
+
+
+
+def p_func_call(p):
+    '''FUNC_CALL : ID PRE_VERIFY LPAREN EXP_LIST POST_VERIFY RPAREN'''
+
 
 def p_post_verify(p):
     '''POST_VERIFY : EMPTY'''
@@ -696,6 +815,7 @@ def p_write_neural(p):
 
 def p_return(p):
     '''RETURN : RETURN_K LPAREN H_EXPRESSION RPAREN SEMICOLON'''
+    qm.generate_quad('RETURN', qm.operand_stack.pop(), '_', '_')
 
 
 def p_expression(p):
@@ -960,28 +1080,31 @@ with open(input_file_path) as f:
 lexer.input(s)
 parser.parse(s)
 
+
+print(FUNC_DIR.functions)
+
 # creation of obj file with the funciton directory
-import json
+#import json
 
 
-with open('obj.txt', 'w') as file:
-     file.write(json.dumps(FUNC_DIR.functions))
+#with open('obj.txt', 'w') as file:
+#     file.write(json.dumps(FUNC_DIR.functions))
 
 
 # creation of the file containing the table of constants
 
-temp_dict = {"temporal" : CNT_TABLE}
+#temp_dict = {"temporal" : CNT_TABLE}
 
-with open('constants.txt', 'w') as file:
-     file.write(json.dumps(temp_dict))
+#with open('constants.txt', 'w') as file:
+#     file.write(json.dumps(temp_dict))
 
 
 #creation of the file containing the quadruples
 
 
-temp_dict = {"temporal" : qm.QUADS}
-with open('quads.txt', 'w') as file:
-     file.write(json.dumps(temp_dict))
+#temp_dict = {"temporal" : qm.QUADS}
+#with open('quads.txt', 'w') as file:
+#     file.write(json.dumps(temp_dict))
 
 
 

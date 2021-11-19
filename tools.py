@@ -7,7 +7,7 @@ class FunctionDirectory(object):
 
     def declare_function(self, id, type, scope):
         self.functions[id] = {"scope" : scope, "type" : type, "id" : id}
-        self.functions[id]['var_table'] = [[],[],[]]
+        self.functions[id]['var_table'] = [[],[],[],{}, {}]
         self.functions[id]['paramorder'] = []
 
 
@@ -49,6 +49,64 @@ class VirtualMemory(object):
         self.global_variables = [1000, 3000, 6000]
         self.local_variables = [10000, 13000, 16000]
         self.temporal_variables = [20000, 23000, 26000]
+
+
+
+    def add_arr(self, scope, type, size):
+        if (scope == 'g_scope'):
+            if (type == 'int'):
+                virtual_address = self.global_variables[0]
+                self.global_variables[0] += size
+                return virtual_address
+
+            elif (type == 'float'):
+                virtual_address = self.global_variables[1]
+                self.global_variables[1] += size
+                return virtual_address
+
+            else:
+                virtual_address = self.global_variables[2]
+                self.global_variables[2] += size
+                return virtual_address
+
+        if (scope == 'l_scope'):
+            if (type == 'int'):
+                virtual_address = self.local_variables[0]
+                self.local_variables[0] += size
+                return virtual_address
+
+            elif (type == 'float'):
+                virtual_address = self.local_variables[1]
+                self.local_variables[1] += size
+                return virtual_address
+
+            else:
+                virtual_address = self.local_variables[2]
+                self.local_variables[2] += size
+                return virtual_address
+
+
+        if (scope == 't_scope'):
+            if (type == 'int'):
+                virtual_address = self.temporal_variables[0]
+                self.temporal_variables[0] += size
+                return virtual_address
+
+            elif (type == 'float'):
+                virtual_address = self.temporal_variables[1]
+                self.temporal_variables[1] += size
+                return virtual_address
+
+            else:
+                virtual_address = self.temporal_variables[2]
+                self.temporal_variables[2] += size
+                return virtual_address
+
+
+
+
+
+
 
 
     def add(self, scope, type):

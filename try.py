@@ -1,18 +1,5 @@
-class Cham(object):
-
-    def __init__(self):
-        self.counter = 1
-
-    def write(self):
-        self.counter += 1
-
-    def add(self):
-        write(self)
+a = [1,2,3,4,5]
 
 
-cham = Cham()
-
-
-a = 1 > 2
-
-print(a)
+if (6 not in a):
+    print("aaaaaaaaaaaa")
