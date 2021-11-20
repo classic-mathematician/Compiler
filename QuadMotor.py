@@ -8,6 +8,7 @@ class QuadMotor(object):
         self.operand_stack = []
         self.types_stack = []
         self.jumps_stack = []
+        self.dim_stack = []
         self.quad_counter = 1
 
 

@@ -401,6 +401,7 @@ def p_proc_body_r(p):
 
 def p_statement(p):
     '''STATEMENT : ASSIGN SEMICOLON
+                 | ASSIGN1 SEMICOLON
                  | FUNC_CALL SEMICOLON
                  | READ SEMICOLON
                  | WRITE SEMICOLON
@@ -517,6 +518,14 @@ def p_else_neural(p):
 def p_assign(p):
     '''ASSIGN : VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL H_EXPRESSION ASSI_H_EXP_NEURAL'''
 
+def p_assign1(p):
+    '''ASSIGN1 : ARR_AC ASSIGN_VAR_N EQUALS EQUALS_NEURAL H_EXPRESSION ASSI_H_EXP_NEURAL'''
+    print("entered")
+
+
+def p_n(p):
+    '''N : EMPTY'''
+
 
 def p_assi_h_exp_neural(p):
     '''ASSI_H_EXP_NEURAL : EMPTY'''
@@ -535,9 +544,9 @@ def p_assi_h_exp_neural(p):
             # temporal_counter += 1
             qm.generate_quad('=', right_operand, '_', left_operand)
 
-            result = vm.add("t_scope", result_type)
-            qm.operand_stack.append(result)
-            qm.types_stack.append(result_type)
+
+
+            
 
         else:
             error_msg = "Assignation type mismatch {} {} {} isn't valid".format(left_type, '=', right_type)
@@ -549,7 +558,6 @@ def p_equals_neural(p):
 
 def p_assing_var_n(p):
     '''ASSIGN_VAR_N : EMPTY'''
-
     # getting type
     if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
         index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
@@ -568,16 +576,68 @@ def p_assing_var_n(p):
 
 
     else:
-        error_msg = "Variable {} hasnt been declared in the current scope and nor in the global scope".format(p[-1])
+        error_msg = "array variable {} hasnt been declared in the current scope and nor in the global scope".format(p[-1])
         raise Exception(error_msg)
 
 #array access
 def p_arr_ac(p):
-    '''ARR_AC : ID ARR_ID_NP DIM_AC'''
+    '''ARR_AC : ID ARR_ID_NP1 DIM_AC'''
+    p[0] = p[1]
+    print("jo")
 
 
-def p_arr_id_np(p):
-    '''ARR_ID_NP : EMPTY'''
+    virtual_address = 0
+    if (p[1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+
+        index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[1])
+        #getting its virtual address
+        virtual_address = FUNC_DIR.functions[last_seen_func]['var_table'][2][index]
+
+
+    elif (p[1] in FUNC_DIR.functions[program_name]['var_table'][0]):
+        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[1])
+        #getting its virtual address
+        virtual_address = FUNC_DIR.functions[program_name]['var_table'][2][index]
+
+
+    else:
+        error_msg = "{} hast been declared in the current program".format(p[1])
+        raise Exception(error_msg)
+
+
+    global exp_stack
+
+
+
+    if (len(exp_stack) > 2):
+        error_msg = "Arrays over 2D arent allowed in this p-language"
+        raise Exception(error_msg)
+
+
+
+
+    if (len(exp_stack) == 1):
+        dim_size = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][0]
+        qm.generate_quad('VERIFY', exp_stack[0], dim_size, '_')
+        type = qm.types_stack.pop()
+
+        temporal = vm.add('t_scope', type)
+        qm.generate_quad('+', virtual_address, exp_stack[0], temporal)
+        qm.operand_stack.append(exp_stack[0])
+        print("hey")
+
+    else:
+        pass
+
+
+
+def p_arr_id_np1(p):
+    '''ARR_ID_NP1 : EMPTY'''
+    if (FUNC_DIR.functions[last_seen_func]['var_table'][3][p[-1]] != 'array'):
+        error_msg = "{} var isnt array".format(p[-1])
+        raise Exception(error_msg)
+
+
     if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
 
 
@@ -606,7 +666,19 @@ def p_arr_id_np(p):
 
 
 def p_dim_ac(p):
-    '''DIM_AC : LBRACE H_EXPRESSION RBRACE DIM_AC_R'''
+    '''DIM_AC : LBRACE H_EXPRESSION DIM_AC_PREV RBRACE DIM_AC_R'''
+
+
+dimensions = 0
+exp_stack = []
+def p_dim_ac_prev(p):
+    '''DIM_AC_PREV : EMPTY'''
+    global dimensions
+    global exp_stack
+    dimensions += 1
+    exp_stack.append(qm.operand_stack.pop())
+
+
 
 
 def p_dim_ac_r(p):
@@ -615,7 +687,7 @@ def p_dim_ac_r(p):
 
 def p_var(p):
     '''VAR : ID
-           | ARRAY '''
+           | ARRAY'''
     p[0] = p[1]
 
 
@@ -629,6 +701,7 @@ def p_array(p):
     global arr_size
     dims = 0
     size = 0
+
 
 
     if (len(arr_size) > 2):
@@ -652,13 +725,11 @@ def p_array(p):
         scope = 'l_scope'
 
 
-    print(arr_size)
 
 
     virtual_address = vm.add_arr(scope, last_type_seen, size)
 
     FUNC_DIR.functions[last_seen_func]['var_table'][2].append(virtual_address)
-
     arr_size = []
 
 last_arr_id = None
@@ -685,8 +756,8 @@ def p_lim_np(p):
     global arr_size
     global dims
     arr_size.append(p[-1])
-    print(dims)
     FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id][dims] = p[-1]
+    print(FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id])
     dims += 1
 
 def p_dim_r(p):
@@ -1082,6 +1153,15 @@ parser.parse(s)
 
 
 print(FUNC_DIR.functions)
+
+print(CNT_TABLE)
+
+count = 1
+
+for item in qm.QUADS:
+    print(count, item)
+    count += 1
+
 
 # creation of obj file with the funciton directory
 #import json

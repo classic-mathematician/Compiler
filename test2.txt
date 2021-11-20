@@ -11,8 +11,6 @@ function int uno (int a, int b){
     float : i;
   }
 
-  i = a;
-
   return(5  * a);
 
 

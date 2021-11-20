@@ -10,9 +10,13 @@ vars{
 function int uno (int a, int b, int c){
   vars {
     float : k;
-    int : p[2][8], q[3], po;
+    int : p[8];
 
   }
+
+  p[6] = a;
+
+
   if (a + b == b - 2){
     write(a);
   } else {

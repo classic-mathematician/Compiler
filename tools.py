@@ -147,6 +147,7 @@ class VirtualMemory(object):
             if (type == 'int'):
                 virtual_address = self.temporal_variables[0]
                 self.temporal_variables[0] += 1
+                print(virtual_address)
                 return virtual_address
 
             elif (type == 'float'):
