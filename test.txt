@@ -1,7 +1,7 @@
 program patito;
 vars{
 
-  int : i, j, k;
+  int : i, j, k, v[4];
   float : f;
   string : o;
 
@@ -10,11 +10,11 @@ vars{
 function int uno (int a, int b, int c){
   vars {
     float : k;
-    int : p[8];
+    int : p[8][3];
 
   }
 
-  p[6] = a;
+  p[a+2][b] = a;
 
 
   if (a + b == b - 2){
@@ -58,6 +58,7 @@ function void dos (float a, float g, int b){
 
 main() {
   i = 2;
+  v[i] = i +3;
   k = i + 1;
   f = 3.14;
   uno(i, i, i);

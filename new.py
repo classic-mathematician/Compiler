@@ -546,7 +546,7 @@ def p_assi_h_exp_neural(p):
 
 
 
-            
+
 
         else:
             error_msg = "Assignation type mismatch {} {} {} isn't valid".format(left_type, '=', right_type)
@@ -624,12 +624,36 @@ def p_arr_ac(p):
         temporal = vm.add('t_scope', type)
         qm.generate_quad('+', virtual_address, exp_stack[0], temporal)
         qm.operand_stack.append(exp_stack[0])
-        print("hey")
+
+
+    elif (len(exp_stack) == 2):
+        dim_size = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][0]
+        qm.generate_quad('VERIFY', exp_stack[0], dim_size, '_')
+        type = qm.types_stack.pop()
+
+        dim_size2 = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][1]
+        qm.generate_quad('VERIFY', exp_stack[1], dim_size2, '_')
+        type = qm.types_stack.pop()
+
+        temporal = vm.add('t_scope', type)
+        qm.generate_quad('*', exp_stack[0], dim_size2, temporal)
+        qm.operand_stack.append(exp_stack[0])
+
+        temporal1 = vm.add('t_scope', type)
+        qm.generate_quad('+', temporal, exp_stack[1], temporal1)
+        qm.operand_stack.append(exp_stack[1])
+
+        temporal2 = vm.add('t_scope', type)
+        qm.generate_quad('+', virtual_address, temporal1, temporal2)
+        qm.operand_stack.append(exp_stack[0])
+
 
     else:
-        pass
+        error_msg = "Dimensions that are distinct from R1 or R2 arent supported"
+        raise Exception(error_msg)
 
 
+    exp_stack = []
 
 def p_arr_id_np1(p):
     '''ARR_ID_NP1 : EMPTY'''
@@ -1164,27 +1188,27 @@ for item in qm.QUADS:
 
 
 # creation of obj file with the funciton directory
-#import json
+import json
 
 
-#with open('obj.txt', 'w') as file:
-#     file.write(json.dumps(FUNC_DIR.functions))
+with open('obj.txt', 'w') as file:
+     file.write(json.dumps(FUNC_DIR.functions))
 
 
 # creation of the file containing the table of constants
 
-#temp_dict = {"temporal" : CNT_TABLE}
+temp_dict = {"temporal" : CNT_TABLE}
 
-#with open('constants.txt', 'w') as file:
-#     file.write(json.dumps(temp_dict))
+with open('constants.txt', 'w') as file:
+     file.write(json.dumps(temp_dict))
 
 
 #creation of the file containing the quadruples
 
 
-#temp_dict = {"temporal" : qm.QUADS}
-#with open('quads.txt', 'w') as file:
-#     file.write(json.dumps(temp_dict))
+temp_dict = {"temporal" : qm.QUADS}
+with open('quads.txt', 'w') as file:
+     file.write(json.dumps(temp_dict))
 
 
 

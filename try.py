@@ -1,8 +1,15 @@
 a = [1,2,3,4,5]
 
 
-c = 9
+def joe():
+    if (1 > 2):
+        print("chrome")
+    else:
+        print("gayyy")
 
-a.append(c)
+    print("josé es un puñetón")
 
-print(c)
+
+
+
+joe()
