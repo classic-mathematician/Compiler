@@ -49,6 +49,7 @@ for var in vars:
         virtual_machine.global_memory.integers[0].append(var)
         virtual_machine.global_memory.integers[1].append(None)
 
+
     if (var >= 3000) and (var <= 5999):
         virtual_machine.global_memory.floats[0].append(var)
         virtual_machine.global_memory.floats[1].append(None)
@@ -69,14 +70,14 @@ virtual_machine.global_memory.print_memory()
 virtual_machine.quads = QUADS
 virtual_machine.print_quads()
 virtual_machine.constants = CNT_TABLE
-#virtual_machine.print_constants()
+virtual_machine.print_constants()
 print(virtual_machine.global_memory.integers)
-print(virtual_machine.find_in_memory(6000))
 print(FUNC_DIR)
 
+print(len(virtual_machine.quads))
 
 
-
+virtual_machine.run()
 
 
 

@@ -296,7 +296,7 @@ def p_post_func(p):
     qm.generate_quad('ENDFunc', '_', '_', '_')
     global temporal_counter
     temporal_counter = 1
-
+    vm.reset()
 
 def p_neural_proc_return_id(p):
     '''neural_proc_return_id : EMPTY'''
@@ -354,9 +354,8 @@ def p_fn_varblock(p):
     #couting of local variables
     work_space_size = len(FUNC_DIR.functions[last_seen_func]['var_table'][0])
     FUNC_DIR.functions[last_seen_func]['size'] = work_space_size
-    vm.reset()
     FUNC_DIR.functions[last_seen_func]['start_address'] = qm.quad_counter
-
+    print("joeeee", last_seen_func)
 
 
 def p_ls_vardecl(p):
@@ -515,11 +514,17 @@ def p_else_neural(p):
     qm.QUADS[false-1][3] = qm.quad_counter
 
 
+
+def p_right_assign(p):
+    '''RIGHT_ASSIGN : H_EXPRESSION
+                    | FUNC_CALL'''
+
+
 def p_assign(p):
-    '''ASSIGN : VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL H_EXPRESSION ASSI_H_EXP_NEURAL'''
+    '''ASSIGN : VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL'''
 
 def p_assign1(p):
-    '''ASSIGN1 : ARR_AC ASSIGN_VAR_N EQUALS EQUALS_NEURAL H_EXPRESSION ASSI_H_EXP_NEURAL'''
+    '''ASSIGN1 : ARR_AC ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL'''
     print("entered")
 
 
@@ -530,11 +535,14 @@ def p_n(p):
 def p_assi_h_exp_neural(p):
     '''ASSI_H_EXP_NEURAL : EMPTY'''
     global temporal_counter
+    global last_seen_func_call
     if qm.operand_stack:
 
         right_operand = qm.operand_stack.pop()
+        print("right_operand", right_operand)
         right_type = qm.types_stack.pop()
         left_operand = qm.operand_stack.pop()
+        print("left operand", left_operand)
         left_type = qm.types_stack.pop()
 
         result_type = semantic_cube[left_type]['='][right_type]
@@ -542,6 +550,8 @@ def p_assi_h_exp_neural(p):
         if result_type != 'e':
             result = 't' + str(temporal_counter)
             # temporal_counter += 1
+
+
             qm.generate_quad('=', right_operand, '_', left_operand)
 
 
@@ -618,7 +628,7 @@ def p_arr_ac(p):
 
     if (len(exp_stack) == 1):
         dim_size = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][0]
-        qm.generate_quad('VERIFY', exp_stack[0], dim_size, '_')
+        qm.generate_quad('VERIFY', exp_stack[0], dim_size, p[1])
         type = qm.types_stack.pop()
 
         temporal = vm.add('t_scope', type)
@@ -628,11 +638,11 @@ def p_arr_ac(p):
 
     elif (len(exp_stack) == 2):
         dim_size = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][0]
-        qm.generate_quad('VERIFY', exp_stack[0], dim_size, '_')
+        qm.generate_quad('VERIFY', exp_stack[0], dim_size, p[1])
         type = qm.types_stack.pop()
 
         dim_size2 = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][1]
-        qm.generate_quad('VERIFY', exp_stack[1], dim_size2, '_')
+        qm.generate_quad('VERIFY', exp_stack[1], dim_size2, p[1])
         type = qm.types_stack.pop()
 
         temporal = vm.add('t_scope', type)
@@ -811,6 +821,7 @@ def p_post_verify(p):
         result = FUNC_DIR.functions[program_name]['var_table'][2][index]
         temporal = vm.add('t_scope', type)
         qm.generate_quad('=', result, '_', temporal)
+        qm.operand_stack.append(temporal)
 
 
 
@@ -887,7 +898,7 @@ def p_write(p):
     '''WRITE : WRITE_K LPAREN WRITE_LIST RPAREN'''
 
 def p_write_list(p):
-    '''WRITE_LIST : H_EXPRESSION WRITE_LIST_R
+    '''WRITE_LIST : RIGHT_ASSIGN WRITE_LIST_R
                   | CONSTANT CONSTANT_WRITE_N WRITE_LIST_R'''
 
 def p_constant_write_n(p):

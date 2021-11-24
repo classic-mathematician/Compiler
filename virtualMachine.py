@@ -8,6 +8,15 @@ class VirtualMachine(object):
         self.temporal_memory = [Memory()]
         self.func_dir = None
         self.func_stack = []
+        self.first_eq = False
+        self.gosub_stack = []
+        self.gosub_ip_stack = []
+
+
+
+    def run(self):
+        while(self.IP <= len(self.quads)):
+            self.act()
 
 
     def print_quads(self):
@@ -23,7 +32,9 @@ class VirtualMachine(object):
 
 
     def act(self):
-        quad = self.quads[self.IP]
+        quad = self.quads[self.IP - 1]
+        print(self.IP, quad)
+
         action = quad[0]
 
 
@@ -34,7 +45,7 @@ class VirtualMachine(object):
             self.temporal_memory.append(Memory())
 
             for address in self.func_dir[func_name]['var_table'][2]:
-                register(self, address)
+                self.register(address)
 
             self.IP += 1
 
@@ -44,23 +55,47 @@ class VirtualMachine(object):
             self.func_stack.pop()
             self.IP += 1
 
+
+        elif action == 'write':
+            print(self.find_in_memory(int(quad[3])))
+
+            self.IP += 1
+
+
         elif action == 'GOSUB':
+            self.gosub_ip_stack.append(self.IP+1)
             self.IP = int(quad[2])
 
+            next_quad = self.quads[self.IP]
+            virtual_address = int(next_quad[3])
+            self.gosub_stack.append(virtual_address)
 
         elif action == 'PARAMETER':
-            thing_to_store = find_in_memory(self, int(quad[1]))
+            thing_to_store = self.find_in_memory(int(quad[1]))
             index_to_store = int(quad[2])
 
-            allocate_in_memory(self, self.func_dir[self.func_stack[-1]]['var_table'][2][index_to_store], thing_to_store)
+            self.allocate_in_memory(self.func_dir[self.func_stack[-1]]['var_table'][2][index_to_store], thing_to_store)
+            self.IP += 1
+
+
+        elif action == 'RETURN':
+            ret_val = self.find_in_memory(int(quad[1]))
+            loc_to_store = self.gosub_stack.pop()
+            self.allocate_in_memory(loc_to_store, ret_val)
+
+            self.IP = self.gosub_ip_stack.pop()
+
+        elif action == 'GOTO_MAIN':
+            self.IP = int(quad[3])
 
 
         elif action == 'GOTO':
+            print(self.find_in_memory(1004))
             self.IP = int(quad[3])
 
 
         elif action == 'GOTOF':
-            cond = find_in_memory(self, int(quad[1]))
+            cond = self.find_in_memory(int(quad[1]))
 
             if (cond > 0):
                 self.IP += 1
@@ -68,28 +103,89 @@ class VirtualMachine(object):
                 self.IP = int(quad[3])
 
 
+        elif action == 'VERIFY':
+            self.first_eq = True
+
+            left_operand = int(quad[1])
+            self.register(left_operand)
+
+            right_operand = int(quad[2])
+            self.register(right_operand)
+
+
+
+            if (self.find_in_memory(left_operand) >= right_operand):
+                error_msg = "Index out of bounds, {} exceeds size {}".format(self.find_in_memory(left_operand), right_operand)
+                raise Exception(error_msg)
+
+            self.IP += 1
+
+
         elif action == '=':
             left_operand = int(quad[1])
             right_operand = int(quad[3])
 
-            register(self, left_operand)
-            register(self, right_operand)
+            print("left operand", left_operand)
+            self.register(left_operand)
+            self.register(right_operand)
 
-            #                        place to assign        thing to assign
-            allocate_in_memory(self, right_operand, find_in_memory(self, left_operand))
 
+            if (self.quads[self.IP-2][0] != 'GOSUB'):
+
+
+
+                if self.first_eq == True:
+
+                    #getting the real address
+                    found = False
+                    count = 1
+                    address = 404
+                    while(found == False):
+                        if (self.quads[self.IP-count][1] == right_operand):
+                            found = True
+                            address = self.quads[self.IP - count][3]
+                        count += 1
+
+                    inside_memory = self.find_in_memory(address)
+                    self.register(inside_memory)
+                                                #address
+                    self.allocate_in_memory(inside_memory, self.find_in_memory(left_operand))
+                    self.first_eq = False
+
+
+                else:
+                    #                        place to assign        thing to assign
+                    self.allocate_in_memory(right_operand, self.find_in_memory(left_operand))
+
+
+
+            self.IP += 1
 
         elif action == '+':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
 
-            result = find_in_memory(self, first_operand) + find_in_memory(self, second_operand)
-            allocate_in_memory(self, third_operand, result)
+            #2D ARRAY
+            if (self.quads[self.IP-4][0] == 'VERIFY' and self.quads[self.IP-5][0] == 'VERIFY'):
+                # se suma la dirección base con lo demás
+                result = first_operand + self.find_in_memory(second_operand)
+                self.allocate_in_memory(third_operand, result)
+
+            #1D ARRAY
+            elif (self.quads[self.IP-2][0] == 'VERIFY' and self.quads[self.IP-3][0] != 'VERIFY'):
+                result = first_operand + self.find_in_memory(second_operand)
+                self.allocate_in_memory(third_operand, result)
+
+            else:
+                result = self.find_in_memory(first_operand) + self.find_in_memory(second_operand)
+                self.allocate_in_memory(third_operand, result)
+
+            self.IP += 1
 
 
         elif action == '-':
@@ -97,12 +193,13 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
 
-            result = find_in_memory(self, first_operand) - find_in_memory(self, second_operand)
-            allocate_in_memory(self, third_operand, result)
+            result = self.find_in_memory(first_operand) - self.find_in_memory(second_operand)
+            self.allocate_in_memory(third_operand, result)
+            self.IP += 1
 
 
         elif action == '*':
@@ -110,12 +207,22 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
 
-            result = find_in_memory(self, first_operand) * find_in_memory(self, second_operand)
-            allocate_in_memory(self, third_operand, result)
+
+            if (self.quads[self.IP-2][0] == 'VERIFY' and self.quads[self.IP-3][0] == 'VERIFY'):
+                # se suma la dirección base con lo demás
+                result = self.find_in_memory(first_operand) * second_operand
+                self.allocate_in_memory(third_operand, result)
+
+            else:
+
+
+                result = self.find_in_memory(first_operand) * self.find_in_memory(second_operand)
+                self.allocate_in_memory(third_operand, result)
+            self.IP += 1
 
 
         elif action == '/':
@@ -123,12 +230,13 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
 
-            result = find_in_memory(self, first_operand) / find_in_memory(self, second_operand)
-            allocate_in_memory(self, third_operand, result)
+            result = self.find_in_memory(first_operand) / self.find_in_memory(second_operand)
+            self.allocate_in_memory(third_operand, result)
+            self.IP += 1
 
 
         elif action == '>':
@@ -136,14 +244,15 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
+            self.IP += 1
 
 
 
 
-            result = find_in_memory(self, first_operand) > find_in_memory(self, second_operand)
+            result = self.find_in_memory(first_operand) > self.find_in_memory(second_operand)
 
             if result == True:
                 result = 1
@@ -151,7 +260,7 @@ class VirtualMachine(object):
             else:
                 result = -1
 
-            allocate_in_memory(self, third_operand, result)
+            self.allocate_in_memory(third_operand, result)
 
 
 
@@ -160,14 +269,14 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
 
 
 
 
-            result = find_in_memory(self, first_operand) < find_in_memory(self, second_operand)
+            result = self.find_in_memory(first_operand) < self.find_in_memory(second_operand)
 
             if result == True:
                 result = 1
@@ -175,7 +284,8 @@ class VirtualMachine(object):
             else:
                 result = -1
 
-            allocate_in_memory(self, third_operand, result)
+            self.allocate_in_memory(third_operand, result)
+            self.IP += 1
 
 
 
@@ -184,14 +294,15 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
+            self.IP += 1
 
 
 
 
-            result = find_in_memory(self, first_operand) >= find_in_memory(self, second_operand)
+            result = self.find_in_memory(first_operand) >= self.find_in_memory(second_operand)
 
             if result == True:
                 result = 1
@@ -199,7 +310,8 @@ class VirtualMachine(object):
             else:
                 result = -1
 
-            allocate_in_memory(self, third_operand, result)
+            self.allocate_in_memory(third_operand, result)
+            self.IP += 1
 
 
 
@@ -208,14 +320,15 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
+            self.IP += 1
 
 
 
 
-            result = find_in_memory(self, first_operand) <= find_in_memory(self, second_operand)
+            result = self.find_in_memory(first_operand) <= self.find_in_memory(second_operand)
 
             if result == True:
                 result = 1
@@ -223,7 +336,8 @@ class VirtualMachine(object):
             else:
                 result = -1
 
-            allocate_in_memory(self, third_operand, result)
+            self.allocate_in_memory(third_operand, result)
+            self.IP += 1
 
 
 
@@ -232,14 +346,12 @@ class VirtualMachine(object):
             second_operand = int(quad[2])
             third_operand = int(quad[3])
 
-            register(self, first_operand)
-            register(self, second_operand)
-            register(self, third_operand)
+            self.register(first_operand)
+            self.register(second_operand)
+            self.register(third_operand)
 
 
-
-
-            result = find_in_memory(self, first_operand) == find_in_memory(self, second_operand)
+            result = (self.find_in_memory(first_operand) == self.find_in_memory(second_operand))
 
             if result == True:
                 result = 1
@@ -247,14 +359,44 @@ class VirtualMachine(object):
             else:
                 result = -1
 
-            allocate_in_memory(self, third_operand, result)
+            self.allocate_in_memory(third_operand, result)
+
+
+            self.IP += 1
 
 
 
-
+    #registers addresses that arent already inside the memory
     def register(self, virtual_address):
+
+        # global integers
+        if (virtual_address >= 1000) and (virtual_address <= 2999):
+
+            #if not found, register it
+            if virtual_address not in self.global_memory.integers[0]:
+                self.global_memory.integers[0].append(virtual_address)
+                self.global_memory.integers[1].append(None)
+
+        # global floats
+        elif (virtual_address >= 3000) and (virtual_address <= 5999):
+            print(virtual_address)
+            print(self.local_memory)
+            if virtual_address not in self.global_memory.floats[0]:
+
+                #if not found, register it
+                self.global_memory.floats[0].append(virtual_address)
+                self.global_memory.floats[1].append(None)
+
+        # global strings
+        elif (virtual_address >= 6000) and (virtual_address <= 9999):
+            if virtual_address not in self.global_memory.strings[0]:
+                self.global_memory.strings[0].append(virtual_address)
+                self.global_memory.strings[1].append(None)
+
+
+
         # local integers
-        if (virtual_address >= 10000) and (virtual_address <= 12999):
+        elif (virtual_address >= 10000) and (virtual_address <= 12999):
 
             #if not found, register it
             if virtual_address not in self.local_memory[-1].integers[0]:
@@ -263,6 +405,7 @@ class VirtualMachine(object):
 
         # local floats
         elif (virtual_address >= 13000) and (virtual_address <= 15999):
+            print(self.local_memory)
             if virtual_address not in self.local_memory[-1].floats[0]:
 
 
@@ -306,7 +449,7 @@ class VirtualMachine(object):
 
 
 
-
+    # returns the content associated to an address
     def find_in_memory(self, virtual_address):
 
         #global integers
@@ -351,7 +494,7 @@ class VirtualMachine(object):
             return self.constants[1][index]
 
 
-
+    #stores a desired item in an specific address
     def allocate_in_memory(self, virtual_address, item):
         #global integers
         if (virtual_address >= 1000) and (virtual_address <= 2999):
