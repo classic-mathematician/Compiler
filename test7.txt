@@ -1,0 +1,68 @@
+program patito;
+vars{
+
+  int : i, j, k, v[4];
+  float : f;
+  string : o;
+
+}
+
+function int uno (int a, int b, int c){
+  vars {
+    float : k;
+    int : p[8][3];
+    string : x;
+
+  }
+  a = b;
+  p[a+2][b] = c - 8;
+
+  x = "aaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  if (a + b == b - 2){
+    write(a);
+  } else {
+    write(x);
+    write(a + b);
+    return(4 * a);
+  }
+
+
+
+
+  return(5  * a);
+
+
+
+}
+
+
+function void dos (int a){
+vars {
+
+  int : n1, n2, count, nterms, n;
+
+}
+  while(a < 10){
+    write(a); 
+    a = a + 2;
+  }
+
+
+  write(a);
+
+}
+
+
+
+
+
+main() {
+
+
+  dos(0);
+  i = 4;
+
+
+
+
+}

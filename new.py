@@ -287,7 +287,7 @@ def p_neural_proc_void_id(p):
 
 
 def p_proc_decl_return(p):
-    '''PROC_DECL_RETURN : FUNCTION_K TYPE ID neural_proc_return_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY RETURN BLOCKEND POST_FUNC PROC_DECL'''
+    '''PROC_DECL_RETURN : FUNCTION_K TYPE ID neural_proc_return_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY BLOCKEND POST_FUNC PROC_DECL'''
 
 
 
@@ -355,7 +355,7 @@ def p_fn_varblock(p):
     work_space_size = len(FUNC_DIR.functions[last_seen_func]['var_table'][0])
     FUNC_DIR.functions[last_seen_func]['size'] = work_space_size
     FUNC_DIR.functions[last_seen_func]['start_address'] = qm.quad_counter
-    print("joeeee", last_seen_func)
+
 
 
 def p_ls_vardecl(p):
@@ -404,6 +404,7 @@ def p_statement(p):
                  | FUNC_CALL SEMICOLON
                  | READ SEMICOLON
                  | WRITE SEMICOLON
+                 | RETURN
                  | FLOW
                 '''
 
@@ -517,83 +518,18 @@ def p_else_neural(p):
 
 def p_right_assign(p):
     '''RIGHT_ASSIGN : H_EXPRESSION
-                    | FUNC_CALL'''
-
-
-def p_assign(p):
-    '''ASSIGN : VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL'''
-
-def p_assign1(p):
-    '''ASSIGN1 : ARR_AC ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL'''
-    print("entered")
-
-
-def p_n(p):
-    '''N : EMPTY'''
-
-
-def p_assi_h_exp_neural(p):
-    '''ASSI_H_EXP_NEURAL : EMPTY'''
-    global temporal_counter
-    global last_seen_func_call
-    if qm.operand_stack:
-
-        right_operand = qm.operand_stack.pop()
-        print("right_operand", right_operand)
-        right_type = qm.types_stack.pop()
-        left_operand = qm.operand_stack.pop()
-        print("left operand", left_operand)
-        left_type = qm.types_stack.pop()
-
-        result_type = semantic_cube[left_type]['='][right_type]
-
-        if result_type != 'e':
-            result = 't' + str(temporal_counter)
-            # temporal_counter += 1
-
-
-            qm.generate_quad('=', right_operand, '_', left_operand)
+                    | FUNC_CALL
+                    | ARR_AC1'''
 
 
 
+r_flag = False
 
-
-        else:
-            error_msg = "Assignation type mismatch {} {} {} isn't valid".format(left_type, '=', right_type)
-            raise Exception(error_msg)
-
-def p_equals_neural(p):
-    '''EQUALS_NEURAL : EMPTY'''
-    qm.poper.append(p[-1])
-
-def p_assing_var_n(p):
-    '''ASSIGN_VAR_N : EMPTY'''
-    # getting type
-    if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
-        index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
-        operand = FUNC_DIR.functions[last_seen_func]['var_table'][2][index]
-        qm.operand_stack.append(operand)
-        type = FUNC_DIR.functions[last_seen_func]['var_table'][1][index]
-        qm.types_stack.append(type)
-
-
-    elif (p[-1] in FUNC_DIR.functions[program_name]['var_table'][0]):
-        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-1])
-        operand = FUNC_DIR.functions[program_name]['var_table'][2][index]
-        qm.operand_stack.append(operand)
-        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
-        qm.types_stack.append(type)
-
-
-    else:
-        error_msg = "array variable {} hasnt been declared in the current scope and nor in the global scope".format(p[-1])
-        raise Exception(error_msg)
-
-#array access
-def p_arr_ac(p):
-    '''ARR_AC : ID ARR_ID_NP1 DIM_AC'''
+def p_arr_ac1(p):
+    '''ARR_AC1 : ID ARR_ID_NP1 DIM_AC'''
     p[0] = p[1]
-    print("jo")
+    global r_flag
+    r_flag = True
 
 
     virtual_address = 0
@@ -631,10 +567,169 @@ def p_arr_ac(p):
         qm.generate_quad('VERIFY', exp_stack[0], dim_size, p[1])
         type = qm.types_stack.pop()
 
+        # Se hace la fórmula c-style para 1 dimensión
         temporal = vm.add('t_scope', type)
         qm.generate_quad('+', virtual_address, exp_stack[0], temporal)
         qm.operand_stack.append(exp_stack[0])
 
+
+    elif (len(exp_stack) == 2):
+        dim_size = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][0]
+        qm.generate_quad('VERIFY', exp_stack[0], dim_size, p[1])
+        type = qm.types_stack.pop()
+
+        dim_size2 = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][1]
+        qm.generate_quad('VERIFY', exp_stack[1], dim_size2, p[1])
+        type = qm.types_stack.pop()
+
+        temporal = vm.add('t_scope', type)
+        qm.generate_quad('*', exp_stack[0], dim_size2, temporal)
+        qm.operand_stack.append(exp_stack[0])
+
+        temporal1 = vm.add('t_scope', type)
+        qm.generate_quad('+', temporal, exp_stack[1], temporal1)
+        qm.operand_stack.append(exp_stack[1])
+
+        temporal2 = vm.add('t_scope', type)
+        qm.generate_quad('+', virtual_address, temporal1, temporal2)
+        qm.operand_stack.append(exp_stack[0])
+
+
+    else:
+        error_msg = "Dimensions that are distinct from R1 or R2 arent supported"
+        raise Exception(error_msg)
+
+
+    exp_stack = []
+
+
+
+
+
+def p_assign(p):
+    '''ASSIGN : VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL'''
+
+
+def p_assign1(p):
+    '''ASSIGN1 : ARR_AC ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL'''
+
+
+
+def p_n(p):
+    '''N : EMPTY'''
+
+
+def p_assi_h_exp_neural(p):
+    '''ASSI_H_EXP_NEURAL : EMPTY'''
+    global temporal_counter
+    if qm.operand_stack:
+
+
+        print("OPERAND STACK", qm.operand_stack)
+        print("TYPES STACK", qm.types_stack)
+
+        if (len(qm.operand_stack) > 2):
+            qm.operand_stack.pop()
+            qm.operand_stack.reverse()
+
+
+        right_operand = qm.operand_stack.pop()
+        right_type = qm.types_stack.pop()
+        left_operand = qm.operand_stack.pop()
+        left_type = qm.types_stack.pop()
+
+
+        result_type = semantic_cube[left_type]['='][right_type]
+
+        if result_type != 'e':
+            result = 't' + str(temporal_counter)
+            # temporal_counter += 1
+
+
+
+            global r_flag
+            if r_flag == True:
+                qm.generate_quad('=', left_operand, '_', right_operand)
+            else:
+                qm.generate_quad('=', right_operand, '_', left_operand)
+            r_flag = False
+
+
+        else:
+            error_msg = "Assignation type mismatch {} {} {} isn't valid".format(left_type, '=', right_type)
+            raise Exception(error_msg)
+
+def p_equals_neural(p):
+    '''EQUALS_NEURAL : EMPTY'''
+    qm.poper.append(p[-1])
+
+def p_assing_var_n(p):
+    '''ASSIGN_VAR_N : EMPTY'''
+    # getting type
+    if (p[-1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+        index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[-1])
+        operand = FUNC_DIR.functions[last_seen_func]['var_table'][2][index]
+        qm.operand_stack.append(operand)
+        type = FUNC_DIR.functions[last_seen_func]['var_table'][1][index]
+        qm.types_stack.append(type)
+
+
+    elif (p[-1] in FUNC_DIR.functions[program_name]['var_table'][0]):
+        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-1])
+        operand = FUNC_DIR.functions[program_name]['var_table'][2][index]
+        qm.operand_stack.append(operand)
+        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
+        qm.types_stack.append(type)
+
+    else:
+        error_msg = "array variable {} hasnt been declared in the current scope and nor in the global scope".format(p[-1])
+        raise Exception(error_msg)
+
+#array access
+def p_arr_ac(p):
+    '''ARR_AC : ID ARR_ID_NP1 DIM_AC'''
+    p[0] = p[1]
+
+
+    virtual_address = 0
+    if (p[1] in FUNC_DIR.functions[last_seen_func]['var_table'][0]):
+
+        index = FUNC_DIR.functions[last_seen_func]['var_table'][0].index(p[1])
+        #getting its virtual address
+        virtual_address = FUNC_DIR.functions[last_seen_func]['var_table'][2][index]
+
+
+    elif (p[1] in FUNC_DIR.functions[program_name]['var_table'][0]):
+        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[1])
+        #getting its virtual address
+        virtual_address = FUNC_DIR.functions[program_name]['var_table'][2][index]
+
+
+    else:
+        error_msg = "{} hast been declared in the current program".format(p[1])
+        raise Exception(error_msg)
+
+
+    global exp_stack
+
+
+
+    if (len(exp_stack) > 2):
+        error_msg = "Arrays over 2D arent allowed in this p-language"
+        raise Exception(error_msg)
+
+
+
+
+    if (len(exp_stack) == 1):
+        dim_size = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][0]
+        qm.generate_quad('VERIFY', exp_stack[0], dim_size, p[1])
+        type = qm.types_stack.pop()
+
+        # Se hace la fórmula c-style para 1 dimensión
+        temporal = vm.add('t_scope', type)
+        qm.generate_quad('+', virtual_address, exp_stack[0], temporal)
+        qm.operand_stack.pop()
 
     elif (len(exp_stack) == 2):
         dim_size = FUNC_DIR.functions[last_seen_func]['var_table'][4][p[1]][0]
@@ -803,6 +898,8 @@ def p_dim_r(p):
 
 def p_func_call(p):
     '''FUNC_CALL : ID PRE_VERIFY LPAREN EXP_LIST POST_VERIFY RPAREN'''
+    global last_call_seen
+    last_call_seen = None
 
 
 def p_post_verify(p):
@@ -816,22 +913,27 @@ def p_post_verify(p):
         param_counter = 0
         start_address = FUNC_DIR.functions[p[-4]]['start_address']
         qm.generate_quad('GOSUB', p[-4], start_address, '_')
-        index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-4])
-        type = FUNC_DIR.functions[program_name]['var_table'][1][index]
-        result = FUNC_DIR.functions[program_name]['var_table'][2][index]
-        temporal = vm.add('t_scope', type)
-        qm.generate_quad('=', result, '_', temporal)
-        qm.operand_stack.append(temporal)
+
+        if FUNC_DIR.functions[p[-4]]['type'] != 'void':
+
+            index = FUNC_DIR.functions[program_name]['var_table'][0].index(p[-4])
+            type = FUNC_DIR.functions[program_name]['var_table'][1][index]
+            result = FUNC_DIR.functions[program_name]['var_table'][2][index]
+            temporal = vm.add('t_scope', type)
+            qm.generate_quad('=', result, '_', temporal)
+            qm.operand_stack.append(temporal)
 
 
 
 param_counter = 0
-temp_last_seen_function = "nada"
+last_call_seen = None
 
 def p_pre_verify(p):
     '''PRE_VERIFY : EMPTY'''
     global param_counter
+    global last_call_seen
 
+    last_call_seen = p[-1]
     type = FUNC_DIR.functions[p[-1]]['type']
 
     if (p[-1] not in FUNC_DIR.functions):
@@ -856,15 +958,31 @@ def p_exp_neural(p):
     '''EXP_NEURAL : EMPTY'''
     global param_counter
     global last_seen_func
-    arg = qm.operand_stack.pop()
-    arg_type = qm.types_stack.pop()
-    if (arg_type == FUNC_DIR.functions[last_seen_func]['paramorder'][param_counter - 1]):
-        qm.generate_quad('PARAMETER', arg, param_counter-1, '_')
-        param_counter += 1
+    print("LAST_CALL_SEEN", last_call_seen)
+    print("LAST SEEN FUNCTION", last_seen_func)
+
+    if last_call_seen != None:
+        arg = qm.operand_stack.pop()
+        arg_type = qm.types_stack.pop()
+        if (arg_type == FUNC_DIR.functions[last_seen_func]['paramorder'][param_counter - 1]):
+            qm.generate_quad('PARAMETER', arg, param_counter-1, '_')
+            param_counter += 1
+
+        else:
+            error_msg = "Argument '{}' doesnt match the function p-signature".format(arg_type)
+            raise Exception(error_msg)
 
     else:
-        error_msg = "Argument '{}' doesnt match the function p-signature".format(arg_type)
-        raise Exception(error_msg)
+
+        arg = qm.operand_stack.pop()
+        arg_type = qm.types_stack.pop()
+        if (arg_type == FUNC_DIR.functions[last_seen_func]['paramorder'][param_counter - 1]):
+            qm.generate_quad('PARAMETER', arg, param_counter-1, '_')
+            param_counter += 1
+
+        else:
+            error_msg = "Argument '{}' doesnt match the function p-signature".format(arg_type)
+            raise Exception(error_msg)
 
 
 def p_exp_list_2(p):
@@ -914,7 +1032,9 @@ def p_write_list_r(p):
 
 def p_write_neural(p):
     '''WRITE_NEURAL : EMPTY'''
+    print(qm.operand_stack)
     result = qm.operand_stack.pop()
+    qm.types_stack.pop()
     qm.generate_quad('write', '_', '_', result)
 
 
@@ -1026,6 +1146,7 @@ def p_neural_divide(p):
 def p_factor_(p):
     '''FACTOR : ID NEURAL_ID_FAC
               | CONSTANT NEURAL_CNT_FACT
+              | MINUS CONSTANT NEURAL_CNT_FACT
               | LPAREN H_EXPRESSION RPAREN'''
 
 #1
@@ -1070,6 +1191,7 @@ def p_neural_cnt_fact(p):
         type = 'string'
 
     if (p[-1] not in CNT_TABLE[0]):
+
         CNT_TABLE[0].append(p[-1])
         virtual_address = vm.add('c_scope', type)
         CNT_TABLE[1].append(virtual_address)
@@ -1088,7 +1210,7 @@ def p_neural_exp(p):
 
     global temporal_counter
     if qm.poper:
-        if qm.poper[-1] in ['>', '<', '>=', '<=', '==']:
+        if qm.poper[-1] in ['>', '<', '>=', '<=', '==', '&&', '||']:
             right_operand = qm.operand_stack.pop()
             right_type = qm.types_stack.pop()
 
@@ -1165,6 +1287,10 @@ def p_principal_body(p):
                       | EMPTY'''
 
 
+def p_o(p):
+    '''O : EMPTY'''
+    print("aaaaaaaaaaa")
+
 def p_principal_body_r(p):
     '''PRINCIPAL_BODY_R : PRINCIPAL_BODY'''
 
@@ -1173,7 +1299,7 @@ def p_empty(p):
 
 parser = yacc.yacc()
 
-input_file_path = "test.txt"
+input_file_path = "testarr.txt"
 
 s = ""
 with open(input_file_path) as f:
@@ -1207,6 +1333,8 @@ with open('obj.txt', 'w') as file:
 
 
 # creation of the file containing the table of constants
+
+print(CNT_TABLE)
 
 temp_dict = {"temporal" : CNT_TABLE}
 

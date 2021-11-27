@@ -11,7 +11,6 @@ function int uno (int a, int b){
     float : i;
   }
 
-  i = a;
 
   return(5  * a);
 
@@ -20,10 +19,26 @@ function int uno (int a, int b){
 }
 
 
-main() {
+function int dos (float a, int c){
+  vars {
+    float : i;
+  }
 
-  b = 3;
-  a = 2 / b;
-  uno(x,y);
+  write(a);
+  a = uno(c, c);
+
+  return(c);
+
+
+
+}
+
+
+main() {
+  i = "cham";
+  write(i);
+  a = 2.2;
+  y = 11;
+  dos(a,y);
 
 }

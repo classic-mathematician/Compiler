@@ -74,7 +74,6 @@ virtual_machine.print_constants()
 print(virtual_machine.global_memory.integers)
 print(FUNC_DIR)
 
-print(len(virtual_machine.quads))
 
 
 virtual_machine.run()

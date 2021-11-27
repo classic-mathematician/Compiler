@@ -1,52 +1,503 @@
-from toolsE import *
-
-
-def p_array(p):
-    '''ARRAY : ID ARR_ID_NP DIM'''
-
-last_arr_id = None
-def p_arr_id_np(p):
-    '''ARR_ID_NP : EMPTY'''
-    global last_arr_id
-    last_arr_id = p[-1]
-    FUNC_DIR.functions[last_seen_func]['var_table'][0].append(p[-1])
-    FUNC_DIR.functions[last_seen_func]['var_table'][1].append(last_type_seen)
-    FUNC_DIR.functions[last_seen_func]['var_table'][3][p[-1]] = 'array'
-    ll = LinkedList()
-    tn = Node()
-    tn.DIM = 1
-    tn.R = 1
-    ll.head = tn
-    FUNC_DIR.functions[last_seen_func]['var_table'][4][p[-1]] = ll
-
-arr_size = []
-def p_dim(p):
-    '''DIM : LBRACE INT LIM_NP RBRACE DIM_R'''
-    p[0] = p[-2]
-    FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id].tail().next = None
-    temp = self.head
-    while (temp):
-        print (temp.DIM)
-        temp = temp.next
 
 
 
-def p_lim_np(p):
-    '''LIM_NP : EMPTY'''
-    global last_arr_id
-    global arr_size
-    arr_size.append(p[-1])
-    FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id].tail().limS = p[-1]
-    FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id].tail().R *= (p[-1] + 1 )
 
-def p_dim_r(p):
-    '''DIM_R : PRE_DIM DIM
-             | EMPTY'''
 
-def p_pre_dim(p):
-    '''PRE_DIM : EMPTY'''
-    global last_arr_id
-    FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id].tail().DIM += 1
-    tn = Node()
-    tn.R = FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id].tail().R
-    FUNC_DIR.functions[last_seen_func]['var_table'][4][last_arr_id].tail().next = tn
+
+    PROGRAM ::= PROGRAM_K ID neural_program_id SEMICOLON BLOCK
+
+    neural_program_id ::= EMPTY
+
+
+    BLOCK ::= VAR_BLOCK PROC_BLOCK PRINCIPAL_BLOCK
+
+    VAR_BLOCK ::= VARS_K BLOCKSTART VAR_DECL BLOCKEND
+
+    VAR_DECL ::= TYPE COLON VAR_LIST SEMICOLON VAR_DECL_R
+
+    VAR_DECL_R ::= VAR_DECL
+                  | EMPTY
+
+    VAR_LIST ::= VAR VAR_LIST2
+
+
+    VAR_LIST2 ::= COMMA VAR VAR_LIST2
+                 | EMPTY
+
+
+
+
+
+
+
+
+
+    TYPE ::= INT_K NEURAL_TYPE
+            | FLOAT_K NEURAL_TYPE
+            | STRING_K NEURAL_TYPE
+
+
+
+
+    NEURAL_TYPE ::= EMPTY
+
+
+    PROC_BLOCK ::= PROC_DECL
+
+
+    PROC_DECL ::= PROC_DECL_RETURN
+                 | PROC_DECL_VOID
+                 | EMPTY
+
+
+
+    PROC_DECL_VOID ::= FUNCTION_K VOID_K ID neural_proc_void_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY BLOCKEND POST_FUNC PROC_DECL
+
+
+
+
+    neural_proc_void_id ::= EMPTY
+
+
+
+    PROC_DECL_RETURN ::= FUNCTION_K TYPE ID neural_proc_return_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY BLOCKEND POST_FUNC PROC_DECL
+
+
+
+
+    POST_FUNC ::= EMPTY
+
+
+    neural_proc_return_id ::= EMPTY
+
+
+
+
+    neural_param_decl ::= EMPTY
+
+
+    PARAM_DECL ::= TYPE VAR neuro PARAM_DECL_R
+                  | EMPTY
+
+
+
+    neuro ::= EMPTY
+
+
+    PARAM_DECL_R ::= COMMA PARAM_DECL
+                    | EMPTY
+
+
+    PROC_BODY ::= STATEMENT PROC_BODY_R
+
+
+    FN_VARBLOCK ::= VARS_K BLOCKSTART LS_VARDECL BLOCKEND
+
+
+
+
+    LS_VARDECL ::= TYPE COLON FNVAR_LS SEMICOLON LS_VARDECL_R
+
+
+
+    LS_VARDECL_R ::= LS_VARDECL
+                    | EMPTY
+
+
+
+    FNVAR_LS ::= VAR FNVAR_LS2
+
+
+
+
+    FNVAR_LS2 ::= COMMA FNVAR_LS
+                 | EMPTY
+
+
+
+    PROC_BODY_R ::= PROC_BODY
+                   | EMPTY
+
+
+
+    STATEMENT ::= ASSIGN SEMICOLON
+                 | ASSIGN1 SEMICOLON
+                 | FUNC_CALL SEMICOLON
+                 | READ SEMICOLON
+                 | WRITE SEMICOLON
+                 | RETURN
+                 | FLOW
+
+
+
+
+    STATEMENT_R ::= STATEMENT STATEMENT_R
+                   | EMPTY
+
+
+
+    FLOW ::= DECISION
+            | LOOP
+
+
+
+    LOOP ::= WHILE_LOOP
+            | DO_WHILE_LOOP SEMICOLON
+            | FOR_LOOP
+
+
+
+    DO_WHILE_LOOP ::= DO_K DW_PREV_NEURAL BLOCKSTART STATEMENT_R BLOCKEND WHILE_K LPAREN H_EXPRESSION RPAREN DW_END_NEURAL
+
+
+
+    DW_PREV_NEURAL ::= EMPTY
+
+
+    DW_END_NEURAL ::= EMPTY
+
+
+
+    WHILE_LOOP ::= WHILE_K WHILE_PREV_NEURAL LPAREN H_EXPRESSION RPAREN WHILE_POST_NEURAL BLOCKSTART STATEMENT_R BLOCKEND WHILE_END_NEURAL
+
+
+    WHILE_PREV_NEURAL ::= EMPTY
+
+
+    WHILE_POST_NEURAL ::= EMPTY
+
+
+
+    WHILE_END_NEURAL ::= EMPTY
+
+
+
+
+    FOR_LOOP ::= FOR_K ID EQUALS INT TO_K INT DO_K BLOCKSTART STATEMENT_R BLOCKEND
+
+
+    DECISION ::= IF_K LPAREN H_EXPRESSION RPAREN EXP_RESULT_NEURAL BLOCKSTART STATEMENT_R BLOCKEND DECISION_ALT DECISION_END_NEURAL
+
+
+    EXP_RESULT_NEURAL ::= EMPTY
+
+
+    DECISION_END_NEURAL ::= EMPTY
+
+
+
+    DECISION_ALT ::= ELSE
+                    | EMPTY
+
+
+    ELSE ::= ELSE_NEURAL ELSE_K BLOCKSTART STATEMENT_R BLOCKEND
+
+
+
+    ELSE_NEURAL ::= EMPTY
+
+
+
+
+    RIGHT_ASSIGN ::= H_EXPRESSION
+                    | FUNC_CALL
+
+
+
+    ASSIGN ::= VAR ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL
+
+
+    ASSIGN1 ::= ARR_AC ASSIGN_VAR_N EQUALS EQUALS_NEURAL RIGHT_ASSIGN ASSI_H_EXP_NEURAL
+
+
+
+    N ::= EMPTY
+
+
+
+    ASSI_H_EXP_NEURAL ::= EMPTY
+
+
+    EQUALS_NEURAL ::= EMPTY
+
+
+    ASSIGN_VAR_N ::= EMPTY
+
+
+    ARR_AC ::= ID ARR_ID_NP1 DIM_AC
+
+
+
+    ARR_ID_NP1 ::= EMPTY
+
+
+
+
+    DIM_AC ::= LBRACE H_EXPRESSION DIM_AC_PREV RBRACE DIM_AC_R
+
+
+
+
+    DIM_AC_PREV ::= EMPTY
+
+
+
+
+
+    DIM_AC_R ::= DIM_AC
+                | EMPTY
+
+
+    VAR ::= ID
+           | ARRAY
+
+
+
+
+
+    ARRAY ::= ID ARR_ID_NP DIM
+
+
+
+    ARR_ID_NP ::= EMPTY
+
+
+    DIM ::= LBRACE INT LIM_NP RBRACE DIM_R
+
+
+
+
+    LIM_NP ::= EMPTY
+
+
+
+    DIM_R ::= DIM
+             | EMPTY
+
+
+
+
+
+    FUNC_CALL ::= ID PRE_VERIFY LPAREN EXP_LIST POST_VERIFY RPAREN
+
+
+
+    POST_VERIFY ::= EMPTY
+
+
+
+
+    PRE_VERIFY ::= EMPTY
+
+
+
+
+    EXP_LIST ::= H_EXPRESSION EXP_NEURAL EXP_LIST_2
+
+
+
+    EXP_NEURAL ::= EMPTY
+
+
+
+    EXP_LIST_2 ::= COMMA EXP_LIST
+                  | EMPTY
+
+
+
+    CONSTANT ::= INT
+                | FLOAT
+                | STRING
+
+
+
+    READ ::= READ_K LPAREN ID_LIST RPAREN
+
+
+    ID_LIST ::= ID READ_NEURAL ID_LIST_R
+
+
+    READ_NEURAL ::= EMPTY
+
+
+
+    ID_LIST_R ::= COMMA ID_LIST
+                 | EMPTY
+
+
+    WRITE ::= WRITE_K LPAREN WRITE_LIST RPAREN
+
+
+    WRITE_LIST ::= RIGHT_ASSIGN WRITE_LIST_R
+                  | CONSTANT CONSTANT_WRITE_N WRITE_LIST_R
+
+
+    CONSTANT_WRITE_N ::= EMPTY
+
+
+    WRITE_LIST_R ::= WRITE_NEURAL COMMA WRITE_LIST
+                    | WRITE_NEURAL EMPTY
+
+
+    WRITE_NEURAL ::= EMPTY
+
+
+
+
+    RETURN ::= RETURN_K LPAREN H_EXPRESSION RPAREN SEMICOLON
+
+
+
+    EXPRESSION ::= TERM NEURAL_EXPRESSION EXPRESSION_R
+
+
+    NEURAL_EXPRESSION ::= EMPTY
+
+
+
+
+
+
+    EXPRESSION_R ::= PLUS NEURAL_PLUS EXPRESSION
+                    | MINUS NEURAL_MINUS EXPRESSION
+                    | EMPTY
+
+
+    NEURAL_PLUS ::= EMPTY
+
+
+
+    NEURAL_MINUS ::= EMPTY
+
+
+
+    TERM ::= FACTOR NEURAL_TERM TERM_R
+
+
+    NEURAL_TERM ::= EMPTY
+
+
+
+
+    TERM_R ::= TIMES NEURAL_TIMES TERM
+              | DIVIDE NEURAL_DIVIDE TERM
+              | EMPTY
+
+
+
+    NEURAL_TIMES ::= EMPTY
+
+
+    NEURAL_DIVIDE ::= EMPTY
+
+
+
+    FACTOR ::= ID NEURAL_ID_FAC
+              | CONSTANT NEURAL_CNT_FACT
+              | LPAREN H_EXPRESSION RPAREN
+
+
+
+    NEURAL_ID_FAC ::= EMPTY
+
+
+
+    NEURAL_CNT_FACT ::= EMPTY
+
+
+
+    S_EXPRESSION ::= EXPRESSION S_EXPRESSION_R
+
+
+
+    NEURAL_EXP ::= EMPTY
+
+
+    S_EXPRESSION_R ::= CONDI NEURAL_CONDI EXPRESSION NEURAL_EXP
+                      | EMPTY
+
+
+
+    NEURAL_CONDI ::= EMPTY
+
+
+
+
+
+
+    CONDI ::= GT
+             | LT
+             | LTE
+             | GTE
+             | DOUBLEEQUAL
+             | AND
+             | OR
+
+
+
+
+
+
+
+    H_EXPRESSION ::= S_EXPRESSION H_EXPRESSION_R
+
+
+
+    H_EXPRESSION_R ::= OR H_EXPRESSION
+                      | AND H_EXPRESSION
+                      | EMPTY
+
+
+
+    PRINCIPAL_BLOCK ::= MAIN_K MAIN_NEURAL LPAREN RPAREN BLOCKSTART PRINCIPAL_BODY BLOCKEND
+
+
+    MAIN_NEURAL ::= EMPTY
+
+
+
+
+    PRINCIPAL_BODY ::= STATEMENT PRINCIPAL_BODY_R
+                      | EMPTY
+
+
+
+    O ::= EMPTY
+
+
+    PRINCIPAL_BODY_R ::= PRINCIPAL_BODY
+
+
+    EMPTY ::=
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#

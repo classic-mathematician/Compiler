@@ -1,0 +1,36 @@
+program patito;
+vars{
+
+  int : i;
+
+
+}
+
+
+function int uno (int a){
+  vars {
+    float : b;
+    int : p;
+  }
+  write(a);
+
+
+  return(a * 5);
+
+
+}
+
+
+
+main() {
+
+  i = 1;
+
+  i = uno(4);
+
+
+
+  write(i);
+
+
+}

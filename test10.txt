@@ -1,0 +1,45 @@
+program patito;
+vars{
+
+  int : i;
+  float : f;
+  string : o;
+
+}
+
+
+
+
+function int uno (int a){
+  vars{
+    float : d;
+
+  }
+
+
+  return (a * 5);
+
+}
+
+
+
+function int dos (int b){
+  vars{
+  float : c;
+
+  }
+  b = uno(5);
+
+  return(b);
+}
+
+
+
+
+
+
+main() {
+  i = dos(100);
+  write(i);
+
+}

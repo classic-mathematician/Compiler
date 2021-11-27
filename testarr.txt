@@ -1,0 +1,49 @@
+program patito;
+vars{
+
+  int : a, b[8], c[3], f;
+
+
+}
+
+
+function int uno (int i){
+  vars {
+    int : p;
+  }
+  write(i);
+
+
+  return(i * 5);
+
+
+}
+
+
+
+main() {
+
+  b[1] = 3;
+  b[3] = 7;
+
+  a = 0;
+
+  while(a < 3){
+    b[a] = 1;
+    f = b[a];
+    write(f);
+    a = a + 1;
+
+  }
+
+
+  a = b[1];
+
+  write(a);
+
+  a = b[3];
+
+  write(a);
+
+
+}

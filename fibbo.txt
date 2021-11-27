@@ -1,0 +1,49 @@
+program patito;
+vars{
+
+  int : n1, n2, count, nterms, n;
+
+
+}
+
+
+function int uno (int a){
+  vars {
+    float : b;
+    int : p;
+  }
+  write(a);
+
+
+
+
+
+  p = a * 3;
+  return(a);
+
+
+}
+
+
+
+main() {
+  n1 = 0;
+  n2 = 1;
+  count = 0;
+  nterms = 12;
+
+  while(count < nterms){
+    write(n1);
+    n = n1 + n2;
+    n1 = n2;
+    n2 = n;
+    count = count + 1;
+
+
+  }
+
+
+
+
+
+}
