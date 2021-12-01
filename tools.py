@@ -1,3 +1,5 @@
+
+# clase directorio de funciones que consta de un diccionario de funciones, cada una con su propio diccionario de propiedades
 class FunctionDirectory(object):
 
     def __init__(self):
@@ -5,6 +7,8 @@ class FunctionDirectory(object):
         self.program_name = "program"
 
 
+
+    # función que declara una función y la agrega.
     def declare_function(self, id, type, scope):
         self.functions[id] = {"scope" : scope, "type" : type, "id" : id}
         self.functions[id]['var_table'] = [[],[],[],{}, {}]
@@ -36,6 +40,8 @@ class FunctionDirectory(object):
 
 
 
+
+#clase de asignación de memoria virtual, esta se inicializa con las direcciones vituales base establecidas en el concepto de memoria
 class VirtualMemory(object):
 
     def __init__(self):
@@ -51,7 +57,7 @@ class VirtualMemory(object):
         self.temporal_variables = [20000, 23000, 26000]
 
 
-
+    #la clase add arr sirve para asignar una dirección y saltarse los espacios correspondientes de acuerdo de su tamaño.
     def add_arr(self, scope, type, size):
         if (scope == 'g_scope'):
             if (type == 'int'):
@@ -108,7 +114,7 @@ class VirtualMemory(object):
 
 
 
-
+    #función que asigna una dirección virtual a una variable de tipo no array
     def add(self, scope, type):
         if (scope == 'g_scope'):
             if (type == 'int'):

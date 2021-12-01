@@ -1,3 +1,9 @@
+#autor: Sergio Eduardo Vega Guzmán
+#fecha: Noviembre 30 2021
+
+
+
+
 import ply.lex as lex
 import re
 import codecs
@@ -24,6 +30,8 @@ from tools import *
 # constantes 30,000 - 34,999
 
 
+
+#declaración de tokens
 tokens = [
 
     #WORDS
@@ -69,6 +77,8 @@ tokens = [
 ]
 
 
+
+# declaración de palabras reservadas
 reserved = {
     'if' : 'IF_K',
     'else' : 'ELSE_K',
@@ -148,16 +158,22 @@ def t_ID(t):
     return t
 
 
+#inizialización del lexer
 lexer = lex.lex()
 
 
+#importación de ply (herramienta para lex y pars)
 import  ply.yacc as yacc
 
 
-#creation of quad motor object
+#creation de objetos pertinentes QuadMotor (organizador de quads y sus operaciones) VirtualMemory (organizador y repartidor de direcciones virtuales)
 qm = QuadMotor()
 vm = VirtualMemory()
+
+#creación de objeto tipo FunctionDirectory (organizador de todo lo relacionado con el directorio de funciones, más especificación en el archivo tools.py)
 FUNC_DIR = FunctionDirectory()
+
+#tabla de constantes, index 0 es el valor numérico, index 1 es la dirección virtual
 CNT_TABLE = [[],[]]
 last_seen_func = "base"
 function_stack = []
@@ -179,11 +195,16 @@ def p_error(p): # Error rule for syntax errors
     exit()
 
 
+
+#columna vertebral de la gramática, regla que engloba todo
 def p_program(p):
     '''PROGRAM : PROGRAM_K ID neural_program_id SEMICOLON BLOCK'''
     print("correct syntax")
 
 program_name = "nada"
+
+
+# punto neurálgico que se encarga de guardar el nombre del programa y añadirlo al directorio de funciones
 def p_neural_program_id(p):
     '''neural_program_id : EMPTY'''
     global last_seen_func
@@ -198,6 +219,7 @@ def p_neural_program_id(p):
     FUNC_DIR.declare_function(p[-1], "program_type", "g_scope",)
 
 
+# división principal de la columba vertebral, bloque de variables principales, bloque de procedimientos y función "main"
 def p_block(p):
     '''BLOCK : VAR_BLOCK PROC_BLOCK PRINCIPAL_BLOCK'''
 
@@ -215,6 +237,7 @@ def p_var_list(p):
     '''VAR_LIST : VAR VAR_LIST2'''
 
 
+#punto neurálgico, almacenaje de variables con sus tipos en el directorio de funciones sí y solo si la función que las declara existe
 def p_var_list2(p):
     '''VAR_LIST2 : COMMA VAR VAR_LIST2
                  | EMPTY'''
@@ -241,10 +264,7 @@ def p_var_list2(p):
 
 
 
-
-
-
-
+#detección de tipos, registra el último tipo visto en una variable global last_type_seen
 def p_type(p):
     '''TYPE : INT_K NEURAL_TYPE
             | FLOAT_K NEURAL_TYPE
@@ -267,11 +287,13 @@ def p_proc_decl(p):
                  | EMPTY'''
 
 
+
+#regla para la declaración de funciones de tipo void
 def p_proc_decl_void(p):
     '''PROC_DECL_VOID : FUNCTION_K VOID_K ID neural_proc_void_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY BLOCKEND POST_FUNC PROC_DECL'''
 
 
-
+#creación de primer cuádrulo en caso de que sea la primer función en ser declarada, registro de última función vista y agregación de la función al directorio de funciones con su respectivo tipo y scope.
 def p_neural_proc_void_id(p):
     '''neural_proc_void_id : EMPTY'''
     global first_func
@@ -285,12 +307,13 @@ def p_neural_proc_void_id(p):
     FUNC_DIR.declare_function(last_seen_func, last_type_seen, "l_scope")
 
 
-
+#regla para la declaración de funciones que regresan valor
 def p_proc_decl_return(p):
     '''PROC_DECL_RETURN : FUNCTION_K TYPE ID neural_proc_return_id LPAREN PARAM_DECL RPAREN neural_param_decl BLOCKSTART FN_VARBLOCK PROC_BODY BLOCKEND POST_FUNC PROC_DECL'''
 
 
 
+# punto neurálgico para cuando cualquier función termina, creación de cuádruplo endfunc y reseteo de las direcciones del asignador
 def p_post_func(p):
     '''POST_FUNC : EMPTY'''
     qm.generate_quad('ENDFunc', '_', '_', '_')
@@ -298,6 +321,8 @@ def p_post_func(p):
     temporal_counter = 1
     vm.reset()
 
+
+# punto neurálgico similar a la función void, en caso de ser la primer función, crea el cuádruplo goto main. Agregación de dicha función al directorio de funciones junto con sus respectivos atributos.
 def p_neural_proc_return_id(p):
     '''neural_proc_return_id : EMPTY'''
     global first_func
@@ -324,6 +349,8 @@ def p_param_decl(p):
     #reset of virtual memory
 
 
+
+#registro de variables, con la condición de que estas no haya sido declaradas anteriormente en el mismo scope, se les asigna una dirección virtual
 def p_neuro(p):
     '''neuro : EMPTY'''
     if last_seen_func != 'base':
@@ -348,6 +375,8 @@ def p_param_decl_r(p):
 def p_proc_body(p):
     '''PROC_BODY : STATEMENT PROC_BODY_R'''
 
+
+#conteo de tamaño para poder utilizarlo en el Era
 def p_fn_varblock(p):
     '''FN_VARBLOCK : VARS_K BLOCKSTART LS_VARDECL BLOCKEND'''
 
@@ -371,7 +400,7 @@ def p_fnvar_ls(p):
     '''FNVAR_LS : VAR FNVAR_LS2'''
 
 
-
+#punto neurálgico con la misma funcionalidad que todos los relacionados con la declaración de variables, se registran si no han sido declaradas anteriormente.
 def p_fnvar_ls2(p):
     '''FNVAR_LS2 : COMMA FNVAR_LS
                  | EMPTY'''
@@ -429,11 +458,14 @@ def p_do_while_loop(p):
     '''DO_WHILE_LOOP : DO_K DW_PREV_NEURAL BLOCKSTART STATEMENT_R BLOCKEND WHILE_K LPAREN H_EXPRESSION RPAREN DW_END_NEURAL'''
 
 
+#agregación a la pila de saltos, el contador actual de los cuádruplos
 def p_dw_prev_neural(p):
     '''DW_PREV_NEURAL : EMPTY'''
     qm.jumps_stack.append(qm.quad_counter)
 
 
+
+#punto neurálgico del do while, se extraen los respectivos valores delas pilas del objeto quadMotor y se crea el cuádruplo GOTOT, se evidencía el uso de la lógica entera, puesto que si el tipo del ret no es int, no se procede.
 def p_dw_end_neural(p):
     '''DW_END_NEURAL : EMPTY'''
     ret = qm.jumps_stack.pop()
@@ -448,12 +480,12 @@ def p_dw_end_neural(p):
 def p_while_loop(p):
     '''WHILE_LOOP : WHILE_K WHILE_PREV_NEURAL LPAREN H_EXPRESSION RPAREN WHILE_POST_NEURAL BLOCKSTART STATEMENT_R BLOCKEND WHILE_END_NEURAL'''
 
-#1
+#1 punto neurálgico, se agrega a la pila de tipos el contador de cuádruplos
 def p_while_prev_neural(p):
     '''WHILE_PREV_NEURAL : EMPTY'''
     qm.jumps_stack.append(qm.quad_counter)
 
-#2
+#2 punto neurálgico para el while, se hace exactamente lo mismo que para el do while, con la diferencia de que para el while se genera un cuádruplo distinto, GOTOF
 def p_while_post_neural(p):
     '''WHILE_POST_NEURAL : EMPTY'''
     exp_type = qm.types_stack.pop()
@@ -466,6 +498,7 @@ def p_while_post_neural(p):
         error_msg = "Type mismatch '{}' type isnt valid for a conditional statement".format(exp_type)
         raise Exception(error_msg)
 
+# Punto neurálgico final, se genera el cuádruplo GOTO para cuando no se cumple la condición.
 def p_while_end_neural(p):
     '''WHILE_END_NEURAL : EMPTY'''
     end = qm.jumps_stack.pop()
@@ -482,6 +515,8 @@ def p_for_loop(p):
 def p_decision(p):
     '''DECISION : IF_K LPAREN H_EXPRESSION RPAREN EXP_RESULT_NEURAL BLOCKSTART STATEMENT_R BLOCKEND DECISION_ALT DECISION_END_NEURAL'''
 
+
+#punto neurálgico para las expresiones de los condicionales, si el tipo no es entero no se prodece. Se genera un GOTOF en caso de operar como se espera y se agrega el contador de cuádruplos - 1 a la pila de saltos.
 def p_exp_result_neural(p):
     '''EXP_RESULT_NEURAL : EMPTY'''
     exp_type = qm.types_stack.pop()
@@ -494,6 +529,8 @@ def p_exp_result_neural(p):
         error_msg = "Type mismatch '{}' type isnt valid for a conditional statement".format(exp_type)
         raise Exception(error_msg)
 
+
+#se asigna el destino sacándolo de la pila de tipos, y se modifica la última parte del cuádruplo asignándole el contador actual de cuádruplos
 def p_decision_end_neural(p):
     '''DECISION_END_NEURAL : EMPTY'''
     dest = qm.jumps_stack.pop()
@@ -507,6 +544,7 @@ def p_else(p):
     '''ELSE : ELSE_NEURAL ELSE_K BLOCKSTART STATEMENT_R BLOCKEND'''
 
 
+#se genera el cuádruplo para el Else de las condicionales, un goto y nuevamente se modifica un cuádruplo existente con el índice false - 1
 def p_else_neural(p):
     '''ELSE_NEURAL : EMPTY'''
     qm.generate_quad('GOTO', '_', '_', '_')
@@ -525,6 +563,9 @@ def p_right_assign(p):
 
 r_flag = False
 
+
+#punto neurálgico para el accesso de los arrays, se valida que la cantidad de expresiones en su stack no supere las dimensiones permitidas por el lenguaje: R2 y
+#se generan los cuádruplos correspondientes para calcular el desplazamiento
 def p_arr_ac1(p):
     '''ARR_AC1 : ID ARR_ID_NP1 DIM_AC'''
     p[0] = p[1]
@@ -618,15 +659,12 @@ def p_assign1(p):
 def p_n(p):
     '''N : EMPTY'''
 
-
+# generación del cuádruplo de asignación que precede a las funciones que regresan valor
 def p_assi_h_exp_neural(p):
     '''ASSI_H_EXP_NEURAL : EMPTY'''
     global temporal_counter
     if qm.operand_stack:
 
-
-        print("OPERAND STACK", qm.operand_stack)
-        print("TYPES STACK", qm.types_stack)
 
         if (len(qm.operand_stack) > 2):
             qm.operand_stack.pop()
@@ -659,10 +697,13 @@ def p_assi_h_exp_neural(p):
             error_msg = "Assignation type mismatch {} {} {} isn't valid".format(left_type, '=', right_type)
             raise Exception(error_msg)
 
+# agregación de operador al popper
 def p_equals_neural(p):
     '''EQUALS_NEURAL : EMPTY'''
     qm.poper.append(p[-1])
 
+
+# asignacipón de variables, metiéndolas al stack de operadores
 def p_assing_var_n(p):
     '''ASSIGN_VAR_N : EMPTY'''
     # getting type
@@ -685,7 +726,7 @@ def p_assing_var_n(p):
         error_msg = "array variable {} hasnt been declared in the current scope and nor in the global scope".format(p[-1])
         raise Exception(error_msg)
 
-#array access
+#array access para al lado izquierdo, es decir,para su asignación. por izquierdo me refiero a qué lado están del igual        p[x] = var (izquierdo) o var = p[x] (derecho)
 def p_arr_ac(p):
     '''ARR_AC : ID ARR_ID_NP1 DIM_AC'''
     p[0] = p[1]
@@ -760,6 +801,8 @@ def p_arr_ac(p):
 
     exp_stack = []
 
+
+#punto neurálgico que valida si la variable que se quiere accesar es de tipo array en primer lugar, después se agrega al stack de operandos y la pila de tipos
 def p_arr_id_np1(p):
     '''ARR_ID_NP1 : EMPTY'''
     if (FUNC_DIR.functions[last_seen_func]['var_table'][3][p[-1]] != 'array'):
@@ -800,6 +843,8 @@ def p_dim_ac(p):
 
 dimensions = 0
 exp_stack = []
+
+# punto neurálgico para empezar con el conteo de dimensiones
 def p_dim_ac_prev(p):
     '''DIM_AC_PREV : EMPTY'''
     global dimensions
@@ -823,6 +868,8 @@ def p_var(p):
 from toolsE import *
 
 
+
+#nueva validación de dimensiones para que no se excedan las permitidas y se agrega la dirección virtual calculada de acuerdo a su tamaño
 def p_array(p):
     '''ARRAY : ID ARR_ID_NP DIM'''
     global program_name
@@ -862,6 +909,8 @@ def p_array(p):
     arr_size = []
 
 last_arr_id = None
+
+# punto neurálgico, se agrega ala tabla de variables el nombre del array, su tipo, su tipo array y sus dimensiones inicializadas
 def p_arr_id_np(p):
     '''ARR_ID_NP : EMPTY'''
     global last_arr_id
@@ -877,7 +926,7 @@ def p_dim(p):
     p[0] = p[-2]
 
 
-
+# punto neurálgico, se completan las dimensiones oficiales de los arreglos que anteriormente solo habían sido inicializados
 dims = 0
 def p_lim_np(p):
     '''LIM_NP : EMPTY'''
@@ -902,6 +951,9 @@ def p_func_call(p):
     last_call_seen = None
 
 
+
+#verificación de los parámetros para las llamadas a función para que estos no excedan el número solicitado para dicha firma. creación de cuádruplo gosub dirigido a la dirección virtual de inicio
+# si la función no es de tipo void, se hace el "parche guadalupano"
 def p_post_verify(p):
     '''POST_VERIFY : EMPTY'''
     global param_counter
@@ -928,6 +980,8 @@ def p_post_verify(p):
 param_counter = 0
 last_call_seen = None
 
+
+# creación de cuádruplo ERA en caso de que la función exista, se le agrega a dicho cuádruplo el tamaño de la función
 def p_pre_verify(p):
     '''PRE_VERIFY : EMPTY'''
     global param_counter
@@ -954,12 +1008,13 @@ def p_exp_list(p):
     '''EXP_LIST : H_EXPRESSION EXP_NEURAL EXP_LIST_2'''
 
 
+# punto neurálgico de expresiones para la asignación paramétrica, se extrae el paraámetro y el índice de dicho parámetro para poder verificarlo en la máquina virtual
+# también se valida que los argumentos sean del tipo solicitado y que se presenten en el orden especificado
 def p_exp_neural(p):
     '''EXP_NEURAL : EMPTY'''
     global param_counter
     global last_seen_func
-    print("LAST_CALL_SEEN", last_call_seen)
-    print("LAST SEEN FUNCTION", last_seen_func)
+
 
     if last_call_seen != None:
         arg = qm.operand_stack.pop()
@@ -1019,6 +1074,7 @@ def p_write_list(p):
     '''WRITE_LIST : RIGHT_ASSIGN WRITE_LIST_R
                   | CONSTANT CONSTANT_WRITE_N WRITE_LIST_R'''
 
+#agregación de constante a la tabla de constantes
 def p_constant_write_n(p):
     '''CONSTANT_WRITE_N : EMPTY'''
     index = CNT_TABLE[0].index(p[-1])
@@ -1030,15 +1086,16 @@ def p_write_list_r(p):
     '''WRITE_LIST_R : WRITE_NEURAL COMMA WRITE_LIST
                     | WRITE_NEURAL EMPTY'''
 
+
+# punto neurálgico para la escritura, se genera el cuádruplo write con el respectivo valor a escribir (dirección virtual)
 def p_write_neural(p):
     '''WRITE_NEURAL : EMPTY'''
-    print(qm.operand_stack)
     result = qm.operand_stack.pop()
     qm.types_stack.pop()
     qm.generate_quad('write', '_', '_', result)
 
 
-
+# punto neurálgico, generación de cuádruplo return al final de dicha expresión gramatical
 def p_return(p):
     '''RETURN : RETURN_K LPAREN H_EXPRESSION RPAREN SEMICOLON'''
     qm.generate_quad('RETURN', qm.operand_stack.pop(), '_', '_')
@@ -1049,6 +1106,9 @@ def p_expression(p):
 
 #4
 temporal_counter = 1
+
+
+#punto neurálgico para el manejo de sumas, uso de cubo semántico para validar la congruencia de tipos y agregación de los operandos a las pilas
 def p_neural_expression(p):
     '''NEURAL_EXPRESSION : EMPTY'''
     global temporal_counter
@@ -1083,6 +1143,8 @@ def p_expression_r(p):
                     | MINUS NEURAL_MINUS EXPRESSION
                     | EMPTY'''
 
+
+# agregación de operadores
 #3a
 def p_neural_plus(p):
     '''NEURAL_PLUS : EMPTY'''
@@ -1098,7 +1160,7 @@ def p_neural_minus(p):
 def p_term(p):
     '''TERM : FACTOR NEURAL_TERM TERM_R'''
 
-#5
+#5 lo mismo que para la sumas y restas, manejo de operandos y validación con el oráculo, cubo semántico
 def p_neural_term(p):
     '''NEURAL_TERM : EMPTY'''
     global temporal_counter
@@ -1132,7 +1194,7 @@ def p_term_r(p):
               | DIVIDE NEURAL_DIVIDE TERM
               | EMPTY'''
 
-#2a
+#2a agregación de operadores a la fila de operadores
 def p_neural_times(p):
     '''NEURAL_TIMES : EMPTY'''
     qm.poper.append(p[-1])
@@ -1149,7 +1211,7 @@ def p_factor_(p):
               | MINUS CONSTANT NEURAL_CNT_FACT
               | LPAREN H_EXPRESSION RPAREN'''
 
-#1
+#1 lo mismo que con las sumas, se valida que exista la variable y si sí, se agrega a su respectiva pila para ser procesada tiempo después
 def p_neural_id_fac(p):
     '''NEURAL_ID_FAC : EMPTY'''
     local = False
@@ -1173,7 +1235,7 @@ def p_neural_id_fac(p):
         raise Exception(error_msg)
 
 
-
+# validación del tipo de variables que son para agregar su tipo a la pila de tipos
 def p_neural_cnt_fact(p):
     '''NEURAL_CNT_FACT : EMPTY'''
     type = "unassigned"
@@ -1205,6 +1267,7 @@ def p_s_expression(p):
     '''S_EXPRESSION : EXPRESSION S_EXPRESSION_R'''
 
 
+#punto neurálgico igual que con los demás operadores, se validan los operandos con el oráculo y si se aceptan se agregan a sus respectivas pilas
 def p_neural_exp(p):
     '''NEURAL_EXP : EMPTY'''
 
@@ -1272,6 +1335,7 @@ def p_principal_block(p):
     '''PRINCIPAL_BLOCK : MAIN_K MAIN_NEURAL LPAREN RPAREN BLOCKSTART PRINCIPAL_BODY BLOCKEND'''
 
 
+#punto neurálgico main que indica dónde está el main para poder saltar a él
 def p_main_neural(p):
     '''MAIN_NEURAL : EMPTY'''
     global last_seen_func
@@ -1352,26 +1416,7 @@ with open('quads.txt', 'w') as file:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# una disculpa por alternar entre inglés y español, pero durante el desarrolo escribía comentarios en inglés por costrumbre.
 
 
 

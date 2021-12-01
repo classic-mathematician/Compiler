@@ -1,3 +1,6 @@
+# objeto máquina virtual, posee la lista de cuádruplos, la tabla de constantes, la memoria global, un stack de memoria local, un stack de memoria temporal, el directorio de funciones
+# el stack de gosubs y el stack de instruction pointer
+
 class VirtualMachine(object):
     def __init__(self):
         self.IP = 1
@@ -14,13 +17,13 @@ class VirtualMachine(object):
 
 
 
-
+    # función que corre los cuádruplos
     def run(self):
         while(self.IP <= len(self.quads)):
 
             self.act()
 
-
+    # función que imprime los cuádruplos
     def print_quads(self):
         cnt = 1
 
@@ -29,10 +32,12 @@ class VirtualMachine(object):
             cnt += 1
 
 
+    # función para imprimir constantes
     def print_constants(self):
         print(self.constants)
 
 
+    # función que toma un cúadruplo y actúa en el dependiendo de la instrucción que posea
     def act(self):
         quad = self.quads[self.IP - 1]
         print(self.IP, quad)
@@ -40,6 +45,7 @@ class VirtualMachine(object):
         action = quad[0]
 
 
+        # agregación de memoria al stack de memoria local y de la memoria temporal
         if action == 'ERA':
             func_name = quad[2]
             self.func_stack.append(func_name)
@@ -51,6 +57,7 @@ class VirtualMachine(object):
 
             self.IP += 1
 
+        # expulsión de la memoria al toparse con un endfunc
         elif action == 'ENDFunc':
             self.local_memory.pop()
             self.temporal_memory.pop()
@@ -61,12 +68,14 @@ class VirtualMachine(object):
             self.IP = self.gosub_ip_stack.pop()
 
 
+        #impresión de lo que sea que esté en el cuádruplo write
         elif action == 'write':
             print(self.find_in_memory(int(quad[3])))
 
             self.IP += 1
 
 
+        #se agrega el instruction pointer a la pila de IPs para poder volver a él luego
         elif action == 'GOSUB':
             type = self.func_dir[quad[1]]['type']
 
@@ -97,6 +106,8 @@ class VirtualMachine(object):
                 self.IP = int(quad[2])
 
 
+
+        #asignacipón paramétrica, se busca en memoria el dato y se le asocia a la dirección especificada
         elif action == 'PARAMETER':
 
 
@@ -114,6 +125,7 @@ class VirtualMachine(object):
             self.IP += 1
 
 
+        #cada que se llega a un return, se expulsa el gosub de la pila de gosubs y se guarda en memoria el valor de retorno, además se cambia el IP al que esté en la pila de IPs gosub
         elif action == 'RETURN':
             ret_val = self.find_in_memory(int(quad[1]))
             loc_to_store = self.gosub_stack.pop()
@@ -121,14 +133,16 @@ class VirtualMachine(object):
 
             self.IP = self.gosub_ip_stack.pop()
 
+
+        # goto al main
         elif action == 'GOTO_MAIN':
             self.IP = int(quad[3])
 
-
+        #goto
         elif action == 'GOTO':
             self.IP = int(quad[3])
 
-
+        # verifica la condición y se mueve de acuerdo a ella
         elif action == 'GOTOF':
             cond = self.find_in_memory(int(quad[1]))
 
@@ -137,6 +151,7 @@ class VirtualMachine(object):
             else:
                 self.IP = int(quad[3])
 
+        # verifica la condición y se mueve de acuerdo a ella
         elif action == 'GOTOT':
             cond = self.find_in_memory(int(quad[1]))
             print(cond)
@@ -147,6 +162,7 @@ class VirtualMachine(object):
                 self.IP += 1
 
 
+        # verifica el tamaño de los parámetros dados para los arreglos de acuerdo a lo establecido en los cuádruplos
         elif action == 'VERIFY':
             self.first_eq = True
 
@@ -165,6 +181,8 @@ class VirtualMachine(object):
             self.IP += 1
 
 
+        #cuádruplo de asignación, se toma la primer expresión del cuádruplo y se le asigna a la siguiente.
+        #se busca en memoria y luego se hace la asignación
         elif action == '=':
             left_operand = int(quad[1])
             right_operand = int(quad[3])
@@ -204,6 +222,8 @@ class VirtualMachine(object):
 
             self.IP += 1
 
+
+        # operación de suma, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '+':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -247,6 +267,7 @@ class VirtualMachine(object):
             self.IP += 1
 
 
+        # operación de resta, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '-':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -261,6 +282,7 @@ class VirtualMachine(object):
             self.IP += 1
 
 
+        # operación de multiplicación, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '*':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -271,6 +293,8 @@ class VirtualMachine(object):
             self.register(third_operand)
 
 
+
+            # se valida que el último cuádrulpo no sea una verificación, puesto que si es así, se tiene que calcula la fórmula para los arreglos
             if (self.quads[self.IP-2][0] == 'VERIFY' and self.quads[self.IP-3][0] == 'VERIFY'):
                 # se suma la dirección base con lo demás
                 result = self.find_in_memory(first_operand) * second_operand
@@ -284,6 +308,8 @@ class VirtualMachine(object):
             self.IP += 1
 
 
+
+        # operación de división, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '/':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -298,6 +324,8 @@ class VirtualMachine(object):
             self.IP += 1
 
 
+
+        # operación de >, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '>':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -321,6 +349,8 @@ class VirtualMachine(object):
 
             self.allocate_in_memory(third_operand, result)
 
+
+        # operación de ||, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '||':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -344,6 +374,7 @@ class VirtualMachine(object):
             self.allocate_in_memory(third_operand, result)
 
 
+        # operación de &6, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '&&':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -367,6 +398,8 @@ class VirtualMachine(object):
             self.allocate_in_memory(third_operand, result)
 
 
+
+        # operación de <, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '<':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -393,6 +426,8 @@ class VirtualMachine(object):
 
 
 
+
+        # operación de >=, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '>=':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -417,7 +452,7 @@ class VirtualMachine(object):
             self.IP += 1
 
 
-
+        # operación de <=, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '<=':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -440,6 +475,7 @@ class VirtualMachine(object):
 
 
 
+        # operación de ==, se toma el valor del primer lado de la expresión, luego el del segundo lado y se guarda en la tercera dirección
         elif action == '==':
             first_operand = int(quad[1])
             second_operand = int(quad[2])
@@ -635,6 +671,8 @@ class VirtualMachine(object):
 
 
 
+
+#objeto de tipo memoria, consta de enteros, flotantes, stirngs y dos índices, uno para valores y otro para direcciones virtuales
 class Memory(object):
     def __init__(self):
         self.integers = [[],[]]
